@@ -1,0 +1,97 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg-deep); }
+body {
+  color: var(--white);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+}
+button { font: inherit; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+h1, h2, h3, p { margin: 0; }
+img { max-width: 100%; height: auto; }
+
+.icon { width: 1.3em; height: 1.3em; display: inline-block; vertical-align: middle; flex: none; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Moldura "celular" — mesma abordagem do app Radar FC */
+.viewport-shell {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 25%, #072b59 0, #020819 54%, #00030d 100%);
+}
+.phone-shell {
+  position: relative;
+  width: min(100vw, 430px);
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 12% 23%, rgba(0, 168, 255, 0.23), transparent 25%),
+    radial-gradient(circle at 92% 32%, rgba(16, 203, 109, 0.14), transparent 24%),
+    linear-gradient(180deg, #020b22 0%, #021733 42%, #02102a 100%);
+  isolation: isolate;
+}
+@media (min-width: 560px) {
+  .viewport-shell { padding: 22px; }
+  .phone-shell {
+    min-height: min(932px, calc(100dvh - 44px));
+    height: min(932px, calc(100dvh - 44px));
+    border-radius: 38px;
+    box-shadow: 0 32px 100px rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(43, 77, 123, 0.53);
+  }
+}
+
+/* Atmosfera de fundo: brilhos flutuantes + holofote */
+.ambient { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.ambient i {
+  position: absolute; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 12px 4px rgba(105, 255, 58, 0.53);
+  animation: drift 7s ease-in-out infinite;
+}
+.ambient i:nth-child(1) { left: 5%; top: 42%; }
+.ambient i:nth-child(2) { right: 6%; top: 15%; animation-delay: -2s; }
+.ambient i:nth-child(3) { right: 21%; top: 64%; animation-delay: -4s; }
+.ambient span {
+  position: absolute; width: 320px; height: 320px; left: 50%; top: 14%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(21, 151, 255, 0.15), transparent 67%);
+}
+@keyframes drift {
+  0%, 100% { transform: translateY(0); opacity: 0.9; }
+  50% { transform: translateY(-16px); opacity: 0.4; }
+}
+
+/* Telas empilhadas */
+.screen {
+  position: absolute; inset: 0;
+  display: none;
+  flex-direction: column;
+  touch-action: pan-y;
+  padding: calc(var(--space-screen) + env(safe-area-inset-top)) var(--space-screen) calc(var(--space-screen) + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.is-active { display: flex; animation: screenIn var(--duration-normal) var(--ease-out); }
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient i { animation: none; }
+  .screen.is-active { animation: none; }
+  * { transition-duration: 0.01ms !important; }
+}

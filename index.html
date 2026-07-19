@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#020c25" />
+  <title>Radar FC — Incline para Chutar</title>
+  <link rel="stylesheet" href="styles/tokens.css" />
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/game.css" />
+</head>
+<body>
+  <div class="viewport-shell">
+    <main class="phone-shell" id="app">
+      <div class="ambient" aria-hidden="true"><i></i><i></i><i></i><span></span></div>
+
+      <!-- ===== MENU ===== -->
+      <section id="screen-menu" class="screen is-active" aria-labelledby="menu-title">
+        <header class="menu-header">
+          <div class="menu-heading">
+            <span class="radar-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="icon"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 12 L19 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </span>
+            <h1 id="menu-title"><em>Incline para</em><strong>Chutar</strong></h1>
+          </div>
+          <img class="menu-mascot" src="assets/mascot.png" alt="Mascote do Radar FC, uma raposa com celular na mão" width="405" height="385" />
+        </header>
+        <p class="menu-sub">Incline seu celular para <b>mirar</b><br />e acerte a zona certa!</p>
+
+        <div class="goal-preview" aria-hidden="true">
+          <div class="goal-preview__frame">
+            <span class="gp-zone gp-zone--side">50</span>
+            <span class="gp-zone gp-zone--center"><i class="gp-ring"></i>100</span>
+            <span class="gp-zone gp-zone--side">50</span>
+          </div>
+          <div class="gp-dots"></div>
+          <div class="gp-ball"></div>
+        </div>
+
+        <h2 class="section-label">Como funciona</h2>
+        <ul class="how-row" role="list">
+          <li>
+            <svg viewBox="0 0 24 24" class="icon how-icon tilt-left" aria-hidden="true"><rect x="8" y="3" width="8" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 21 L2.5 19.2 M2.5 19.2 L4.6 16.4 M2.5 19.2 L6.2 18" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+            <span>Incline à<br />esquerda</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" class="icon how-icon" aria-hidden="true"><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.4 2.6"/><circle cx="12" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/></svg>
+            <span>Centre o ponto<br />no alvo</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" class="icon how-icon tilt-right" aria-hidden="true"><rect x="8" y="3" width="8" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M18 21 L21.5 19.2 M21.5 19.2 L19.4 16.4 M21.5 19.2 L17.8 18" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+            <span>Incline à<br />direita</span>
+          </li>
+        </ul>
+        <p class="hint-note">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 10.6v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.15" fill="currentColor"/></svg>
+          Mantenha o ponto estável no alvo para chutar com precisão!
+        </p>
+
+        <div class="best-row">
+          <article class="best-card">
+            <h3>Recorde de chutes</h3>
+            <strong id="best-striker">0</strong>
+          </article>
+          <article class="best-card best-card--purple">
+            <h3>Recorde de defesas</h3>
+            <strong id="best-keeper">0</strong>
+          </article>
+        </div>
+
+        <div class="menu-actions">
+          <button id="btn-mode-striker" class="cta cta--green" type="button">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 8.1 15.6 10.7 14.2 14.9 9.8 14.9 8.4 10.7Z" fill="currentColor"/></svg>
+            <span><b>Vamos chutar!</b><small>Treino de chute com mira</small></span>
+          </button>
+          <button id="btn-mode-keeper" class="cta cta--purple" type="button">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3 19 5.6v5.1c0 4.6-2.9 7.7-7 9.3-4.1-1.6-7-4.7-7-9.3V5.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.6 11.9 11 14.3l4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span><b>Ser o goleiro</b><small>Incline e defenda os chutes</small></span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== JOGO ===== -->
+      <section id="screen-game" class="screen" aria-label="Partida em andamento">
+        <header class="game-top">
+          <button id="btn-back" class="icon-button" type="button" aria-label="Voltar ao menu">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <h2 id="game-title" class="game-title">Incline para chutar</h2>
+          <div class="top-right">
+            <button id="btn-mute" class="icon-button" type="button" aria-label="Silenciar sons" aria-pressed="false">
+              <svg viewBox="0 0 24 24" class="icon icon-sound-on" aria-hidden="true"><path d="M4 9.5v5h3.4L12 18.6V5.4L7.4 9.5Z" fill="currentColor"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6M18 6.6a7.4 7.4 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              <svg viewBox="0 0 24 24" class="icon icon-sound-off" aria-hidden="true"><path d="M4 9.5v5h3.4L12 18.6V5.4L7.4 9.5Z" fill="currentColor"/><path d="m15.5 9.7 4.6 4.6m0-4.6-4.6 4.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </button>
+            <span id="sensor-chip" class="sensor-chip" role="status">Giroscópio</span>
+          </div>
+        </header>
+
+        <div class="scene-wrap">
+          <canvas id="scene" role="img" aria-label="Cena do jogo: campo de futebol com o gol ao fundo; a mira acompanha a inclinação do celular"></canvas>
+          <div id="flash-msg" class="flash-msg" aria-hidden="true"></div>
+          <div id="round-live" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="hud-cards">
+          <article class="hud-card">
+            <h3>Pontuação</h3>
+            <strong id="hud-score">0</strong>
+            <small id="hud-best">Melhor: 0</small>
+          </article>
+          <article class="hud-card hud-card--combo">
+            <h3>Combo</h3>
+            <strong id="hud-combo">x1</strong>
+            <span class="combo-bar" aria-hidden="true"><i id="combo-fill"></i></span>
+          </article>
+          <article class="hud-card">
+            <h3>Bola</h3>
+            <strong id="hud-round">1/10</strong>
+            <small id="hud-hits">0 gols</small>
+          </article>
+        </div>
+
+        <div class="action-row">
+          <button id="btn-shoot" class="cta cta--green cta--big" type="button">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 8.1 15.6 10.7 14.2 14.9 9.8 14.9 8.4 10.7Z" fill="currentColor"/></svg>
+            <b>Chutar!</b>
+          </button>
+          <p id="action-hint" class="action-hint">Incline o celular para mirar</p>
+        </div>
+      </section>
+
+      <!-- ===== RESULTADO ===== -->
+      <section id="screen-result" class="screen" aria-labelledby="result-title">
+        <div class="result-box">
+          <p class="eyebrow" id="result-eyebrow">Fim do treino</p>
+          <h2 id="result-title" class="result-title">Treino completo!</h2>
+          <p id="result-sub" class="result-sub"></p>
+          <div class="result-stats">
+            <article class="result-stat"><b id="res-score">0</b><span>Pontos</span></article>
+            <article class="result-stat"><b id="res-hits">0</b><span id="res-hits-label">Gols</span></article>
+            <article class="result-stat"><b id="res-combo">x1</b><span>Maior combo</span></article>
+          </div>
+          <p id="new-record" class="new-record" hidden>Novo recorde!</p>
+          <aside class="coach-tip">
+            <img src="assets/mascot.png" alt="" width="405" height="385" />
+            <div>
+              <h3>Dica do treinador</h3>
+              <p id="coach-tip-text">Incline devagar para ter mais controle e mire no centro para mais pontos!</p>
+            </div>
+          </aside>
+          <div class="result-actions">
+            <button id="btn-again" class="cta cta--green" type="button"><b>Jogar de novo</b></button>
+            <button id="btn-menu" class="ghost-button" type="button">Voltar ao menu</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== OVERLAYS ===== -->
+      <div id="overlay-permission" class="overlay" role="dialog" aria-modal="true" aria-labelledby="perm-title" hidden>
+        <div class="overlay-card">
+          <span class="overlay-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="icon"><ellipse cx="12" cy="12" rx="9" ry="4.2" fill="none" stroke="currentColor" stroke-width="1.4" transform="rotate(-24 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4.2" fill="none" stroke="currentColor" stroke-width="1.4" transform="rotate(24 12 12)"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+          </span>
+          <h2 id="perm-title">Ativar giroscópio</h2>
+          <p id="perm-text">O jogo usa o sensor de inclinação do celular. O navegador vai pedir sua permissão.</p>
+          <p id="perm-error" class="perm-error" hidden></p>
+          <button id="btn-grant" class="cta cta--green" type="button"><b>Ativar sensor</b></button>
+          <button id="btn-skip-sensor" class="ghost-button" type="button">Jogar sem sensor (arrastar o dedo)</button>
+        </div>
+      </div>
+
+      <div id="overlay-calibrate" class="overlay" role="dialog" aria-modal="true" aria-labelledby="cal-title" hidden>
+        <div class="overlay-card">
+          <span class="overlay-icon overlay-icon--pulse" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="icon"><rect x="8" y="3" width="8" height="17" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 20.2h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </span>
+          <h2 id="cal-title">Calibrar posição</h2>
+          <p>Segure o celular como estiver confortável, de frente para você, e toque em calibrar. Essa vira a posição de mira central.</p>
+          <button id="btn-calibrate" class="cta cta--green" type="button"><b>Calibrar e jogar</b></button>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

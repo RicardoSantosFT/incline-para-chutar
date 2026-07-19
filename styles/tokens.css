@@ -1,0 +1,39 @@
+:root {
+  color-scheme: dark;
+
+  /* Paleta Radar FC (portada de radar-fc/src/styles/base.css) + roxo das zonas */
+  --bg: #020c25;
+  --bg-deep: #010819;
+  --panel: rgba(9, 32, 77, 0.9);
+  --panel-2: rgba(5, 28, 62, 0.94);
+  --line: rgba(82, 132, 223, 0.38);
+  --green: #78f33f;
+  --green-2: #29ca52;
+  --green-soft: rgba(120, 243, 63, 0.16);
+  --yellow: #ffdf1b;
+  --blue: #25a8ff;
+  --purple: #a78bfa;
+  --purple-2: #8b5cf6;
+  --purple-soft: rgba(139, 92, 246, 0.2);
+  --red: #ff6a67;
+  --muted: #aab6d0;
+  --white: #f8faff;
+
+  --text-hero: clamp(22px, 7.4vw, 36px);
+  --text-title: clamp(17px, 4.6vw, 20px);
+  --text-base: 14px;
+
+  --radius-card: 18px;
+  --radius-pill: 999px;
+  --space-screen: 16px;
+
+  --duration-fast: 150ms;
+  --duration-normal: 280ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --shadow-card: inset 0 1px 0 rgba(115, 149, 221, 0.11), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --glow-green: 0 0 22px rgba(88, 255, 70, 0.35);
+  --glow-purple: 0 0 22px rgba(139, 92, 246, 0.4);
+
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
