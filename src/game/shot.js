@@ -17,6 +17,21 @@ export function shotDispersion(stability, maxSpread = MAX_SPREAD) {
 
 const insideEllipse = (dx, dy, rx, ry) => (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1
 
+// Onde a bola vai parar: mira + dispersão (estabilidade, força, especial).
+// Separado da defesa para o duelo online (o batedor calcula a colocação,
+// o goleiro remoto resolve a defesa).
+export function computeShotPlacement({ aim, stability, power = 0.6, cavadinha = false, special = null, rngSpreadX, rngSpreadY }) {
+  const spread = shotDispersion(stability) + powerSpread(power) + (special?.spread ?? 0)
+  const shotX = aim.x + (rngSpreadX * 2 - 1) * spread
+  let shotY = aim.y + (rngSpreadY * 2 - 1) * spread * 0.8
+  // Cavadinha: bola lenta que morre no meio-alto do gol
+  if (cavadinha) shotY = Math.max(0.5, Math.min(0.75, aim.y))
+  shotY = Math.max(0.02, shotY)
+  const overBar = shotY > 1
+  const offTarget = Math.abs(shotX) > 1 || overBar
+  return { shot: { x: shotX, y: shotY }, offTarget, overBar }
+}
+
 // Resolve um chute 2D do modo artilheiro.
 // aim: {x, y} mira final · keeper: {x, y} posição do mergulho rival
 // cavadinha: toque curtinho · special: golpe armado no chacoalhão
@@ -32,15 +47,10 @@ export function resolveShot2D({
   rngSpreadX,
   rngSpreadY,
 }) {
-  const spread = shotDispersion(stability) + powerSpread(power) + (special?.spread ?? 0)
-  const shotX = aim.x + (rngSpreadX * 2 - 1) * spread
-  let shotY = aim.y + (rngSpreadY * 2 - 1) * spread * 0.8
-  // Cavadinha: bola lenta que morre no meio-alto do gol
-  if (cavadinha) shotY = Math.max(0.5, Math.min(0.75, aim.y))
-  shotY = Math.max(0.02, shotY)
-
-  const overBar = shotY > 1
-  const offTarget = Math.abs(shotX) > 1 || overBar
+  const placement = computeShotPlacement({ aim, stability, power, cavadinha, special, rngSpreadX, rngSpreadY })
+  const shotX = placement.shot.x
+  const shotY = placement.shot.y
+  const { overBar, offTarget } = placement
 
   // Comprometido: usa o MENOR fator uma vez só (nada de 0,55 × 0,55).
   // Não comprometido: paradinha lida vira vantagem do goleiro (reachMultRead).

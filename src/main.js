@@ -19,13 +19,11 @@ import { renderStriker, renderKeeperMode } from './render/composer.js'
 import { initSprites } from './render/sprites.js'
 import { createFx, resetFx, burst, floatText, shake, ripple, updateFx, shakeOffset, drawFx } from './render/fx.js'
 import { createHud, COACH_TIPS } from './ui/hud.js'
+import { store, STORAGE } from './ui/store.js'
+import { showPermissionBlocked } from './ui/permission.js'
 import { createAudio } from './audio.js'
+import { createDuelController } from './net/controller.js'
 
-const STORAGE = {
-  striker: 'iprachute:best:striker',
-  keeper: 'iprachute:best:keeper',
-  muted: 'iprachute:muted',
-}
 const AIM_SMOOTH = 0.16 // fração de convergência por frame de 60 fps
 const DELTA_WINDOW = 12
 const NERVE_STEP = 0.09
@@ -66,26 +64,14 @@ const game = {
   trail: [],
   highlight: null,
   spin: 0,
+  // Duelo online
+  duelActive: false,
+  duelAwaiting: false,
+  duelShot: null,
+  rivalFeintUntil: 0,
 }
 
-// ---------- Persistência ----------
-const store = {
-  get(key, fallback = 0) {
-    try {
-      const v = localStorage.getItem(key)
-      return v === null ? fallback : Number(v) || 0
-    } catch {
-      return fallback
-    }
-  },
-  set(key, value) {
-    try {
-      localStorage.setItem(key, String(value))
-    } catch {
-      /* modo privado: sem persistência */
-    }
-  },
-}
+window.__game = game // sonda de depuração (somente leitura)
 
 audio.setMuted(store.get(STORAGE.muted, 0) === 1)
 updateMuteButton()
@@ -115,6 +101,17 @@ function resizeCanvas() {
 new ResizeObserver(resizeCanvas).observe(canvas.parentElement)
 
 // ---------- Fluxo de telas / sensor ----------
+// setupTarget: para onde ir depois de permissão+calibração
+let setupTarget = 'session' // 'session' | 'lobby'
+function proceedAfterSetup() {
+  if (setupTarget === 'lobby') {
+    setupTarget = 'session'
+    duelCtl.openLobby()
+  } else {
+    startSession()
+  }
+}
+
 function selectMode(mode) {
   audio.unlock()
   audio.tap()
@@ -134,27 +131,7 @@ function afterPermission() {
     document.getElementById('btn-calibrate').focus()
     return
   }
-  startSession()
-}
-
-// O iOS bloqueia o pedido de sensor sem mostrar prompt quando a página roda
-// embutida (iframe de outra origem ou webview de app). Explicamos o motivo.
-const isEmbedded = (() => {
-  try {
-    return window.top !== window
-  } catch {
-    return true
-  }
-})()
-
-function showPermissionBlocked() {
-  const errorBox = document.getElementById('perm-error')
-  const detail = tilt.state.permissionError ? `<br /><small>Detalhe técnico: ${tilt.state.permissionError}</small>` : ''
-  errorBox.innerHTML = isEmbedded
-    ? '<b>O pedido foi bloqueado pelo iPhone.</b> O jogo está rodando embutido dentro de outra página, e nesse caso o iOS não mostra o pedido de sensor. Abra o jogo direto no Safari (página própria, fora de apps) para inclinar de verdade — ou jogue aqui no modo toque.' + detail
-    : '<b>O pedido foi bloqueado.</b> Se você negou antes: no Safari, toque em <b>aA</b> na barra de endereço → Configurações do Site → ative <b>Movimento e Orientação</b> e tente de novo. Se estiver usando o navegador de dentro de um app (Instagram, Claude etc.), abra o link no Safari.' + detail
-  errorBox.hidden = false
-  document.querySelector('#btn-grant b').textContent = 'Tentar de novo'
+  proceedAfterSetup()
 }
 
 document.getElementById('btn-grant').addEventListener('click', async () => {
@@ -163,12 +140,12 @@ document.getElementById('btn-grant').addEventListener('click', async () => {
     hud.nodes.overlayPermission.hidden = true
     afterPermission()
   } else {
-    showPermissionBlocked()
+    showPermissionBlocked(tilt.state.permissionError)
   }
 })
 document.getElementById('btn-skip-sensor').addEventListener('click', () => {
   hud.nodes.overlayPermission.hidden = true
-  startSession()
+  proceedAfterSetup()
 })
 document.getElementById('btn-calibrate').addEventListener('click', () => {
   // pequena espera para o sensor produzir leitura após a permissão
@@ -176,20 +153,26 @@ document.getElementById('btn-calibrate').addEventListener('click', () => {
     tilt.calibrate()
     game.calibrated = true
     hud.nodes.overlayCalibrate.hidden = true
-    startSession()
+    proceedAfterSetup()
   }, 120)
 })
 
 document.getElementById('btn-mode-striker').addEventListener('click', () => selectMode('striker'))
 document.getElementById('btn-mode-keeper').addEventListener('click', () => selectMode('keeper'))
+document.getElementById('btn-mode-duel').addEventListener('click', () => {
+  setupTarget = 'lobby'
+  selectMode(null)
+})
 document.getElementById('btn-back').addEventListener('click', (event) => {
   // Clique por ponteiro solta o foco (senão a barra de espaço fica presa nele)
   if (event.detail > 0) event.currentTarget.blur()
   audio.tap()
+  if (game.duelActive) duelCtl.leave()
   goToMenu()
 })
 document.getElementById('btn-menu').addEventListener('click', () => {
   audio.tap()
+  duelCtl.leave()
   goToMenu()
 })
 document.getElementById('btn-again').addEventListener('click', () => {
@@ -303,6 +286,14 @@ tilt.onShake(() => {
     audio.special()
     navigator.vibrate?.(30)
   } else if (game.mode === 'keeper' && game.phase === 'windup') {
+    if (game.duelActive) {
+      // Contra humano a finta é psicológica: o rival VÊ você dançando no gol
+      game.provocation.feintUntil = game.time + 0.9
+      duelCtl.sendFeint()
+      audio.provoke()
+      navigator.vibrate?.([15, 30, 15])
+      return
+    }
     if (game.provocation.nerve >= NERVE_MAX) return // saturou: sem feedback falso
     game.provocation.nerve += 1
     game.provocation.feintUntil = game.time + 0.9
@@ -436,14 +427,24 @@ function shoot(holdMs) {
   // Cavadinha cancela o especial armado (sem empilhar bônus de estilo)
   const special = cavadinha ? null : game.special
   const paradinha = special?.id === 'paradinha'
-  const committed = paradinha && Math.random() < special.commitChance
-  const dive = keeperDive2D({ rngZone: Math.random(), rngHeight: Math.random(), rngX: Math.random() })
+  const runupDuration = paradinha ? PARADINHA_RUNUP_S : RUNUP_S
+  const pose = special?.id === 'chaleira' || special?.id === 'calcanhar' ? special.id : 'normal'
 
   // Sem sensor (teclado/toque) a mira parada é trivial: o bônus de precisão
   // só é atingível de verdade segurando o celular
   const usingSensor = tilt.state.mode === 'tilt' && !tilt.state.dragging
   const stability = usingSensor ? game.stability : Math.min(game.stability, PRECISION_THRESHOLD - 0.05)
 
+  if (game.duelActive) {
+    // Duelo: quem defende é um humano — a colocação vai pela rede
+    duelCtl.onShoot({ aim: { ...game.aim }, stability, power, cavadinha, special, pose, runupDuration })
+    setPhase('runup')
+    hud.setHint(paradinha ? '<b>Paradinha!</b> Ele vai pular antes?' : 'Chutando…')
+    return
+  }
+
+  const committed = paradinha && Math.random() < special.commitChance
+  const dive = keeperDive2D({ rngZone: Math.random(), rngHeight: Math.random(), rngX: Math.random() })
   game.shot = {
     pending: true,
     aim: { ...game.aim },
@@ -453,14 +454,22 @@ function shoot(holdMs) {
     special,
     dive,
     committed,
-    runupDuration: paradinha ? PARADINHA_RUNUP_S : RUNUP_S,
-    pose: special?.id === 'chaleira' || special?.id === 'calcanhar' ? special.id : 'normal',
+    runupDuration,
+    pose,
   }
   setPhase('runup')
   hud.setHint(paradinha ? '<b>Paradinha!</b> O goleiro vai comprar?' : 'Chutando…')
 }
 
 function launchStrikerShot() {
+  if (game.duelActive) {
+    // Colocação já calculada no momento do chute (foi pela rede)
+    if (game.shot.cavadinha) audio.chip()
+    else audio.kick(game.shot.power)
+    navigator.vibrate?.(10 + Math.round(game.shot.power * 20))
+    setPhase('flight')
+    return
+  }
   const s = game.shot
   const result = resolveShot2D({
     aim: s.aim,
@@ -528,14 +537,18 @@ function endStrikerFlight() {
 
 function launchAiShot() {
   const nerveMiss = Math.min(NERVE_CAP, game.provocation.nerve * NERVE_STEP)
-  const shotInfo = aiShot2D({
-    round: game.state.round,
-    rngX: Math.random(),
-    rngY: Math.random(),
-    nerveMiss,
-    rngMiss: Math.random(),
-    rngPower: Math.random(),
-  })
+  // Duelo: a bola veio do batedor humano; solo: rival controlado pela máquina
+  const shotInfo =
+    game.duelShot ??
+    aiShot2D({
+      round: game.state.round,
+      rngX: Math.random(),
+      rngY: Math.random(),
+      nerveMiss,
+      rngMiss: Math.random(),
+      rngPower: Math.random(),
+    })
+  game.duelShot = null
   game.shot = { ...shotInfo, from: { x: g.spotX, y: g.spotY } }
   game.kickTime = game.time
   // Bolão sai com som mais seco; bola colocada, mais macio
@@ -566,10 +579,12 @@ function endKeeperFlight() {
       : 0
   const gained = success ? points * game.state.combo : 0
   const prevCombo = game.state.combo
-  game.state = applyResult(game.state, { success, points })
+  // No duelo o que conta é o placar de gols, não a pontuação solo
+  if (!game.duelActive) game.state = applyResult(game.state, { success, points })
   game.shot.saved = saved
   game.shot.rivalMissed = rivalMissed
   game.shot.defenseResult = result
+  if (game.duelActive) duelCtl.keeperResolved(result, game.defense.target)
 
   if (saved) {
     hud.flash(perfect ? 'Defesaça!' : 'Defendeu!', 'save')
@@ -713,12 +728,20 @@ function updateGame(dt) {
 
   if (game.mode === 'striker') {
     if (game.phase === 'runup' && game.phaseT >= game.shot.runupDuration) launchStrikerShot()
-    else if (game.phase === 'flight' && game.phaseT >= game.shot.flightDur) endStrikerFlight()
-    else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) nextRoundOrFinish()
+    else if (game.phase === 'flight' && game.phaseT >= game.shot.flightDur) {
+      if (game.duelActive) duelCtl.onShooterFlightEnd()
+      else endStrikerFlight()
+    } else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) {
+      if (game.duelActive) duelCtl.onOutcomeEnd()
+      else nextRoundOrFinish()
+    }
   } else if (game.mode === 'keeper') {
     if (game.phase === 'windup' && game.phaseT >= (game.aiPlan?.windup ?? WINDUP_S)) launchAiShot()
     else if (game.phase === 'flight' && game.phaseT >= game.shot.duration) endKeeperFlight()
-    else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) nextRoundOrFinish()
+    else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) {
+      if (game.duelActive) duelCtl.onOutcomeEnd()
+      else nextRoundOrFinish()
+    }
   }
 }
 
@@ -743,6 +766,30 @@ function render() {
   drawVignette(ctx, g)
   ctx.restore()
 }
+
+// ---------- Duelo online ----------
+const duelCtl = createDuelController({
+  game,
+  hud,
+  audio,
+  reducedMotion,
+  fx: {
+    rippleGoal(shotPos) {
+      ripple(fx)
+      burst(fx, g.gx(shotPos.x), g.gy(shotPos.y), 'goal')
+      shake(fx, 8)
+    },
+  },
+  startRound: () => startRound(),
+  setPhase: (p) => setPhase(p),
+  goToMenu: () => goToMenu(),
+  ensureLoop: () => {
+    resizeCanvas()
+    ensureLoop()
+    acquireWakeLock()
+  },
+})
+duelCtl.init()
 
 // Ao voltar para a aba: recalibra (o usuário pode ter mudado de posição) e
 // readquire o wake lock, que o navegador libera quando a aba fica oculta

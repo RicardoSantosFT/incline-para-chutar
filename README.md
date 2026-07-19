@@ -18,6 +18,15 @@ Minigame mobile-first de pênaltis controlado pelo **acelerômetro/giroscópio**
 - Sem giroscópio? O jogo cai automaticamente para **arrastar o dedo** (celular) ou **setas ← → + espaço** (desktop).
 - Recordes ficam salvos no aparelho (localStorage).
 
+## Duelo online (multiplayer)
+
+Modo **Duelo online** no menu: crie uma sala, mande o convite (link ou código de 4 letras) e disputem pênaltis alternados — 5 bolas para cada um, morte súbita no empate, W.O. se alguém abandonar. A finta do goleiro e a paradinha do batedor viram guerra psicológica entre humanos.
+
+- **Com Supabase (online de verdade):** preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY` em `src/net/config.js` (Settings → API do projeto) e faça o deploy — o jogo usa canais do Supabase Realtime com um cliente próprio, sem SDK. Para testar sem redeploy, cole no console do navegador:
+  `localStorage.setItem('iprachute:supabase:url', 'https://SEU.supabase.co')` e
+  `localStorage.setItem('iprachute:supabase:key', 'eyJ…')`.
+- **Sem Supabase:** o duelo funciona em modo local entre duas abas do mesmo aparelho (útil para testar).
+
 ## Rodar localmente
 
 ```bash

@@ -77,6 +77,45 @@
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3 19 5.6v5.1c0 4.6-2.9 7.7-7 9.3-4.1-1.6-7-4.7-7-9.3V5.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.6 11.9 11 14.3l4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span><b>Ser o goleiro</b><small>Incline e defenda os chutes</small></span>
           </button>
+          <button id="btn-mode-duel" class="cta cta--blue" type="button">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="8" cy="8.6" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16.4" cy="9.8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.4 19c.5-3 2.4-4.7 4.6-4.7s4.1 1.7 4.6 4.7M12.9 18.6c.4-2.2 1.8-3.6 3.5-3.6 1.7 0 3.1 1.3 3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <span><b>Duelo online</b><small>Desafie um amigo em tempo real</small></span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== DUELO: SALA ===== -->
+      <section id="screen-duel" class="screen" aria-labelledby="duel-title">
+        <header class="game-top">
+          <button id="btn-duel-back" class="icon-button" type="button" aria-label="Voltar ao menu">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <h2 id="duel-title" class="game-title">Duelo online</h2>
+          <span aria-hidden="true"></span>
+        </header>
+
+        <div class="duel-lobby">
+          <article class="lobby-card">
+            <h3>Criar sala</h3>
+            <p>Crie a sala e mande o convite. Quem cria bate primeiro no sorteio.</p>
+            <button id="btn-duel-create" class="cta cta--green" type="button"><b>Criar sala</b></button>
+            <div id="duel-room-info" class="room-info" hidden>
+              <p class="room-code" id="duel-code" aria-live="polite">····</p>
+              <button id="btn-duel-copy" class="ghost-button" type="button">Copiar convite</button>
+              <p class="lobby-status" id="duel-status-host" role="status">Aguardando adversário…</p>
+            </div>
+          </article>
+
+          <article class="lobby-card">
+            <h3>Entrar com código</h3>
+            <div class="join-row">
+              <input id="duel-code-input" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD" aria-label="Código da sala" />
+              <button id="btn-duel-join" class="cta cta--purple" type="button"><b>Entrar</b></button>
+            </div>
+            <p class="lobby-status" id="duel-status-join" role="status"></p>
+          </article>
+
+          <p class="hint-note" id="duel-transport-note"></p>
         </div>
       </section>
 
@@ -101,6 +140,14 @@
           <div id="special-badge" class="special-badge" aria-hidden="true" hidden></div>
           <div id="flash-msg" class="flash-msg" aria-hidden="true"></div>
           <div id="round-live" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
+
+        <div id="duel-bar" class="duel-bar" hidden>
+          <div class="duel-side"><span>Você</span><b id="duel-score-me">0</b></div>
+          <div class="duel-balls" id="duel-balls-me" aria-hidden="true"></div>
+          <div class="duel-vs" aria-hidden="true">×</div>
+          <div class="duel-balls" id="duel-balls-rival" aria-hidden="true"></div>
+          <div class="duel-side duel-side--rival"><b id="duel-score-rival">0</b><span>Rival</span></div>
         </div>
 
         <div class="hud-cards">
@@ -151,6 +198,7 @@
             </div>
           </aside>
           <div class="result-actions">
+            <button id="btn-rematch" class="cta cta--purple" type="button" hidden><b>Revanche</b></button>
             <button id="btn-again" class="cta cta--green" type="button"><b>Jogar de novo</b></button>
             <button id="btn-menu" class="ghost-button" type="button">Voltar ao menu</button>
           </div>

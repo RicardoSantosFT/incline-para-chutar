@@ -50,7 +50,9 @@ export function renderStriker(ctx, g, game) {
     const x = grounded ? g.gx(shot.dive.x) : g.gx(0) + (g.gx(shot.dive.x) - g.gx(0)) * diveT
     keeperPose = { x, diveDir: dir, diveT: dir === 0 ? diveT * 0.25 : diveT, reachY: shot.dive.y, grounded }
   } else {
-    keeperPose = { x: g.gx(0), diveDir: 0, diveT: 0, sway: game.time, reachY: 0.35 }
+    // No duelo, o goleiro humano rival pode fintar (mensagem 'feint')
+    const rivalFeint = (game.rivalFeintUntil ?? 0) > game.time ? 1 : 0
+    keeperPose = { x: g.gx(0), diveDir: 0, diveT: 0, sway: game.time, reachY: 0.35, feint: rivalFeint }
   }
 
   // Gol marcado: no outcome a bola está na rede, atrás do goleiro
@@ -81,6 +83,13 @@ export function renderStriker(ctx, g, game) {
     })
     game.spin += (shot.cavadinha ? 7.2 : 18) * dt
     pushTrail(game, pos)
+    drawTrail(ctx, game.trail, g)
+    drawBall(ctx, { ...pos, spin: game.spin }, g)
+  } else if (phase === 'await') {
+    // Duelo: bola congelada na chegada, aguardando o veredito do goleiro rival
+    drawKeeper(ctx, g, keeperPose, 'rival')
+    drawStriker(ctx, g, { progress: 1, kicking: false, pose: shot.pose, palette: 'player' })
+    const pos = ballFlightPos(g, 1, shot.shot.x, shot.shot.y, { curve: shot.curve })
     drawTrail(ctx, game.trail, g)
     drawBall(ctx, { ...pos, spin: game.spin }, g)
   } else if (phase === 'outcome') {

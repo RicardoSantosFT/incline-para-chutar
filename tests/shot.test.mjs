@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { shotDispersion, resolveShot2D, keeperDive2D } from '../src/game/shot.js'
+import { shotDispersion, resolveShot2D, keeperDive2D, computeShotPlacement } from '../src/game/shot.js'
 import { SPECIALS } from '../src/game/specials.js'
 import { KEEPER_REACH_X, MAX_SPREAD, PRECISION_BONUS } from '../src/game/constants.js'
 
@@ -173,6 +173,15 @@ test('paradinha não comprada deixa o goleiro maior (risco real)', () => {
   })
   assert.equal(semEspecial.saved, false)
   assert.equal(naoComprou.saved, true, 'goleiro que não comprou fica ligado e alcança mais')
+})
+
+test('computeShotPlacement (duelo) bate com a colocação do resolveShot2D', () => {
+  const params = { aim: { x: 0.7, y: 0.9 }, stability: 0.6, power: 0.9, rngSpreadX: 0.8, rngSpreadY: 0.2 }
+  const placement = computeShotPlacement(params)
+  const full = resolveShot2D({ ...params, keeper: { x: -0.5, y: 0.3 } })
+  assert.deepEqual(placement.shot, full.shot)
+  assert.equal(placement.offTarget, full.offTarget)
+  assert.equal(placement.overBar, full.overBar)
 })
 
 test('keeperDive2D espalha o mergulho dentro da zona com rngX', () => {

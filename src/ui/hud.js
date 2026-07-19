@@ -6,6 +6,7 @@ export function createHud() {
   const nodes = {
     screens: {
       menu: el('screen-menu'),
+      duel: el('screen-duel'),
       game: el('screen-game'),
       result: el('screen-result'),
     },

@@ -360,6 +360,11 @@ img { max-width: 100%; height: auto; }
   color: #17093a;
   box-shadow: 0 10px 26px rgba(109, 63, 224, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
+.cta--blue {
+  background: linear-gradient(160deg, #7cc8ff, #25a8ff 55%, #0f7fd6);
+  color: #04223c;
+  box-shadow: 0 10px 26px rgba(37, 168, 255, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
 .cta:active { transform: scale(0.97); filter: brightness(1.06); }
 @media (hover: hover) and (pointer: fine) {
   .cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
@@ -561,6 +566,83 @@ img { max-width: 100%; height: auto; }
   min-height: 38px;
 }
 .action-hint b { color: var(--green); }
+
+/* ===== Duelo online ===== */
+.duel-lobby { display: grid; gap: 12px; margin-top: 14px; }
+.lobby-card {
+  border-radius: var(--radius-card);
+  border: 1px solid rgba(82, 132, 223, 0.35);
+  background: linear-gradient(160deg, rgba(12, 39, 84, 0.9), rgba(4, 22, 53, 0.88));
+  box-shadow: var(--shadow-card);
+  padding: 16px 14px;
+  display: grid;
+  gap: 10px;
+}
+.lobby-card h3 {
+  font-size: 13px; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--blue);
+}
+.lobby-card p { color: #c3cfe6; font-size: 13px; }
+.room-info { display: grid; gap: 9px; justify-items: center; }
+.room-code {
+  font-size: 44px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
+  color: var(--green);
+  text-shadow: 0 0 24px rgba(88, 255, 70, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+.lobby-status { min-height: 18px; color: var(--muted) !important; font-size: 12.5px !important; }
+.join-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.join-row input {
+  border-radius: 14px;
+  border: 1px solid rgba(82, 132, 223, 0.5);
+  background: rgba(4, 20, 47, 0.9);
+  color: var(--white);
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.join-row input:focus-visible { outline: 3px solid rgba(37, 168, 255, 0.7); outline-offset: 2px; }
+.join-row .cta { min-height: 52px; }
+
+.duel-bar {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border-radius: 17px;
+  border: 1px solid rgba(37, 168, 255, 0.45);
+  background: linear-gradient(160deg, rgba(10, 42, 85, 0.95), rgba(4, 22, 53, 0.92));
+  box-shadow: var(--shadow-card);
+  padding: 8px 12px;
+}
+.duel-bar[hidden] { display: none; }
+.duel-side { display: flex; align-items: center; gap: 7px; }
+.duel-side span {
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted);
+}
+.duel-side b { font-size: 24px; font-variant-numeric: tabular-nums; color: var(--green); }
+.duel-side--rival b { color: var(--blue); }
+.duel-vs { color: var(--muted); font-weight: 900; }
+.duel-balls { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+.duel-balls i {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: rgba(170, 182, 208, 0.28);
+}
+.duel-balls i.is-goal { background: var(--green); box-shadow: 0 0 8px rgba(120, 243, 63, 0.66); }
+.duel-balls i.is-miss { background: var(--red); }
+#screen-game.is-duel .hud-cards { display: none; }
 
 /* ===== Resultado ===== */
 #screen-result { justify-content: center; }
@@ -766,6 +848,45 @@ img { max-width: 100%; height: auto; }
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3 19 5.6v5.1c0 4.6-2.9 7.7-7 9.3-4.1-1.6-7-4.7-7-9.3V5.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.6 11.9 11 14.3l4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span><b>Ser o goleiro</b><small>Incline e defenda os chutes</small></span>
           </button>
+          <button id="btn-mode-duel" class="cta cta--blue" type="button">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="8" cy="8.6" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16.4" cy="9.8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.4 19c.5-3 2.4-4.7 4.6-4.7s4.1 1.7 4.6 4.7M12.9 18.6c.4-2.2 1.8-3.6 3.5-3.6 1.7 0 3.1 1.3 3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <span><b>Duelo online</b><small>Desafie um amigo em tempo real</small></span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== DUELO: SALA ===== -->
+      <section id="screen-duel" class="screen" aria-labelledby="duel-title">
+        <header class="game-top">
+          <button id="btn-duel-back" class="icon-button" type="button" aria-label="Voltar ao menu">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <h2 id="duel-title" class="game-title">Duelo online</h2>
+          <span aria-hidden="true"></span>
+        </header>
+
+        <div class="duel-lobby">
+          <article class="lobby-card">
+            <h3>Criar sala</h3>
+            <p>Crie a sala e mande o convite. Quem cria bate primeiro no sorteio.</p>
+            <button id="btn-duel-create" class="cta cta--green" type="button"><b>Criar sala</b></button>
+            <div id="duel-room-info" class="room-info" hidden>
+              <p class="room-code" id="duel-code" aria-live="polite">····</p>
+              <button id="btn-duel-copy" class="ghost-button" type="button">Copiar convite</button>
+              <p class="lobby-status" id="duel-status-host" role="status">Aguardando adversário…</p>
+            </div>
+          </article>
+
+          <article class="lobby-card">
+            <h3>Entrar com código</h3>
+            <div class="join-row">
+              <input id="duel-code-input" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD" aria-label="Código da sala" />
+              <button id="btn-duel-join" class="cta cta--purple" type="button"><b>Entrar</b></button>
+            </div>
+            <p class="lobby-status" id="duel-status-join" role="status"></p>
+          </article>
+
+          <p class="hint-note" id="duel-transport-note"></p>
         </div>
       </section>
 
@@ -790,6 +911,14 @@ img { max-width: 100%; height: auto; }
           <div id="special-badge" class="special-badge" aria-hidden="true" hidden></div>
           <div id="flash-msg" class="flash-msg" aria-hidden="true"></div>
           <div id="round-live" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
+
+        <div id="duel-bar" class="duel-bar" hidden>
+          <div class="duel-side"><span>Você</span><b id="duel-score-me">0</b></div>
+          <div class="duel-balls" id="duel-balls-me" aria-hidden="true"></div>
+          <div class="duel-vs" aria-hidden="true">×</div>
+          <div class="duel-balls" id="duel-balls-rival" aria-hidden="true"></div>
+          <div class="duel-side duel-side--rival"><b id="duel-score-rival">0</b><span>Rival</span></div>
         </div>
 
         <div class="hud-cards">
@@ -840,6 +969,7 @@ img { max-width: 100%; height: auto; }
             </div>
           </aside>
           <div class="result-actions">
+            <button id="btn-rematch" class="cta cta--purple" type="button" hidden><b>Revanche</b></button>
             <button id="btn-again" class="cta cta--green" type="button"><b>Jogar de novo</b></button>
             <button id="btn-menu" class="ghost-button" type="button">Voltar ao menu</button>
           </div>
@@ -1065,6 +1195,21 @@ function shotDispersion(stability, maxSpread = MAX_SPREAD) {
 
 const insideEllipse = (dx, dy, rx, ry) => (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1
 
+// Onde a bola vai parar: mira + dispersão (estabilidade, força, especial).
+// Separado da defesa para o duelo online (o batedor calcula a colocação,
+// o goleiro remoto resolve a defesa).
+function computeShotPlacement({ aim, stability, power = 0.6, cavadinha = false, special = null, rngSpreadX, rngSpreadY }) {
+  const spread = shotDispersion(stability) + powerSpread(power) + (special?.spread ?? 0)
+  const shotX = aim.x + (rngSpreadX * 2 - 1) * spread
+  let shotY = aim.y + (rngSpreadY * 2 - 1) * spread * 0.8
+  // Cavadinha: bola lenta que morre no meio-alto do gol
+  if (cavadinha) shotY = Math.max(0.5, Math.min(0.75, aim.y))
+  shotY = Math.max(0.02, shotY)
+  const overBar = shotY > 1
+  const offTarget = Math.abs(shotX) > 1 || overBar
+  return { shot: { x: shotX, y: shotY }, offTarget, overBar }
+}
+
 // Resolve um chute 2D do modo artilheiro.
 // aim: {x, y} mira final · keeper: {x, y} posição do mergulho rival
 // cavadinha: toque curtinho · special: golpe armado no chacoalhão
@@ -1080,15 +1225,10 @@ function resolveShot2D({
   rngSpreadX,
   rngSpreadY,
 }) {
-  const spread = shotDispersion(stability) + powerSpread(power) + (special?.spread ?? 0)
-  const shotX = aim.x + (rngSpreadX * 2 - 1) * spread
-  let shotY = aim.y + (rngSpreadY * 2 - 1) * spread * 0.8
-  // Cavadinha: bola lenta que morre no meio-alto do gol
-  if (cavadinha) shotY = Math.max(0.5, Math.min(0.75, aim.y))
-  shotY = Math.max(0.02, shotY)
-
-  const overBar = shotY > 1
-  const offTarget = Math.abs(shotX) > 1 || overBar
+  const placement = computeShotPlacement({ aim, stability, power, cavadinha, special, rngSpreadX, rngSpreadY })
+  const shotX = placement.shot.x
+  const shotY = placement.shot.y
+  const { overBar, offTarget } = placement
 
   // Comprometido: usa o MENOR fator uma vez só (nada de 0,55 × 0,55).
   // Não comprometido: paradinha lida vira vantagem do goleiro (reachMultRead).
@@ -1270,6 +1410,776 @@ function isSessionOver(state, total = TOTAL_ROUNDS) {
 
 function finishSession(state) {
   return { ...state, best: Math.max(state.best, state.score) }
+}
+
+// Credenciais do Supabase (Settings → API do seu projeto).
+// A anon key é pública por design — vai no cliente mesmo.
+// Deixe vazio para o modo local (duelo entre duas abas do mesmo aparelho).
+const SUPABASE_URL = ''
+const SUPABASE_ANON_KEY = ''
+
+// Override sem redeploy: cole no console do navegador
+//   localStorage.setItem('iprachute:supabase:url', 'https://xxxx.supabase.co')
+//   localStorage.setItem('iprachute:supabase:key', 'eyJ...')
+function fromStorage(key) {
+  try {
+    return localStorage.getItem(key) || ''
+  } catch {
+    return ''
+  }
+}
+
+function getSupabaseConfig() {
+  const url = fromStorage('iprachute:supabase:url') || SUPABASE_URL
+  const key = fromStorage('iprachute:supabase:key') || SUPABASE_ANON_KEY
+  return url && key ? { url, key } : null
+}
+
+// Protocolo puro do duelo online: disputa de pênaltis alternada (5 para cada),
+// decisão antecipada, morte súbita com teto e W.O. Os dois clientes aplicam os
+// mesmos eventos na mesma ordem e chegam ao mesmo estado (event-sourced).
+
+const BALLS_PER_SIDE = 5
+const MAX_SUDDEN_PAIRS = 5
+
+const ROLES = ['host', 'guest']
+const other = (role) => (role === 'host' ? 'guest' : 'host')
+
+// Código de sala sem caracteres ambíguos (nada de I/O/0/1)
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+function makeRoomCode(rng = Math.random) {
+  let code = ''
+  for (let i = 0; i < 4; i++) {
+    code += CODE_ALPHABET[Math.min(CODE_ALPHABET.length - 1, Math.floor(rng() * CODE_ALPHABET.length))]
+  }
+  return code
+}
+
+function createDuel(myRole) {
+  return {
+    phase: 'lobby', // lobby | playing | done
+    stage: 'regular', // regular | sudden
+    myRole,
+    firstShooter: null,
+    shooter: null,
+    ball: 0,
+    score: { host: 0, guest: 0 },
+    balls: [],
+    winner: null,
+    byForfeit: false,
+  }
+}
+
+const takenBy = (balls, side) => balls.filter((b) => b.shooter === side).length
+
+function advance(state) {
+  const { score, balls } = state
+  const regularTotal = BALLS_PER_SIDE * 2
+
+  if (state.stage === 'regular') {
+    // Decisão antecipada: quem não alcança mais, perdeu
+    const leftHost = BALLS_PER_SIDE - takenBy(balls, 'host')
+    const leftGuest = BALLS_PER_SIDE - takenBy(balls, 'guest')
+    if (score.host > score.guest + leftGuest) return { ...state, phase: 'done', winner: 'host' }
+    if (score.guest > score.host + leftHost) return { ...state, phase: 'done', winner: 'guest' }
+    if (balls.length === regularTotal) {
+      if (score.host !== score.guest) {
+        return { ...state, phase: 'done', winner: score.host > score.guest ? 'host' : 'guest' }
+      }
+      return { ...state, stage: 'sudden', shooter: other(state.shooter), ball: state.ball + 1 }
+    }
+    return { ...state, shooter: other(state.shooter), ball: state.ball + 1 }
+  }
+
+  // Morte súbita: cada par completo decide; teto encerra em empate honesto
+  const suddenCount = balls.length - regularTotal
+  if (suddenCount % 2 === 0) {
+    if (score.host !== score.guest) {
+      return { ...state, phase: 'done', winner: score.host > score.guest ? 'host' : 'guest' }
+    }
+    if (suddenCount / 2 >= MAX_SUDDEN_PAIRS) return { ...state, phase: 'done', winner: null }
+  }
+  return { ...state, shooter: other(state.shooter), ball: state.ball + 1 }
+}
+
+function applyDuelEvent(state, event) {
+  if (!event || state.phase === 'done') {
+    if (event?.type === 'forfeit' && state.phase !== 'done') {
+      return { ...state, phase: 'done', winner: other(event.by), byForfeit: true }
+    }
+    return state
+  }
+  switch (event.type) {
+    case 'start': {
+      if (state.phase !== 'lobby' || !ROLES.includes(event.firstShooter)) return state
+      return { ...state, phase: 'playing', firstShooter: event.firstShooter, shooter: event.firstShooter, ball: 1 }
+    }
+    case 'ball-result': {
+      if (state.phase !== 'playing') return state
+      if (event.ball !== state.ball || event.shooter !== state.shooter) return state
+      if (typeof event.scored !== 'boolean') return state
+      const scored = event.scored
+      const next = {
+        ...state,
+        balls: [...state.balls, { shooter: state.shooter, scored }],
+        score: scored ? { ...state.score, [state.shooter]: state.score[state.shooter] + 1 } : state.score,
+      }
+      return advance(next)
+    }
+    case 'forfeit': {
+      if (!ROLES.includes(event.by)) return state
+      return { ...state, phase: 'done', winner: other(event.by), byForfeit: true }
+    }
+    default:
+      return state
+  }
+}
+
+// Validação das mensagens que chegam pela rede (nunca confiar no outro lado)
+const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
+function validateDuelMsg(msg) {
+  if (!msg || typeof msg !== 'object') return null
+  switch (msg.type) {
+    case 'hello':
+      return ROLES.includes(msg.role) ? msg : null
+    case 'start':
+      return ROLES.includes(msg.firstShooter) ? msg : null
+    case 'kick':
+      return Number.isInteger(msg.ball) &&
+        msg.shot && isNum(msg.shot.x) && isNum(msg.shot.y) &&
+        isNum(msg.power) && typeof msg.cavadinha === 'boolean' &&
+        (msg.specialId === null || typeof msg.specialId === 'string') &&
+        isNum(msg.runupDuration) && isNum(msg.flightDur) &&
+        typeof msg.offTarget === 'boolean' && typeof msg.overBar === 'boolean' &&
+        typeof msg.pose === 'string'
+        ? msg
+        : null
+    case 'ball-result':
+      return Number.isInteger(msg.ball) && ROLES.includes(msg.shooter) && typeof msg.scored === 'boolean' ? msg : null
+    case 'feint':
+    case 'ping':
+    case 'rematch':
+      return msg
+    case 'forfeit':
+      return ROLES.includes(msg.by) ? msg : null
+    default:
+      return null
+  }
+}
+
+// Transportes do duelo. Interface única:
+//   createTransport(code) → { kind, send(msg), onMessage(cb), onStatus(cb), close() }
+// SupabaseTransport: canal Realtime (protocolo Phoenix sobre WebSocket), sem SDK.
+// LocalTransport: BroadcastChannel — duas abas no mesmo aparelho (e testes).
+const HEARTBEAT_MS = 25000
+const RECONNECT_BASE_MS = 800
+const MAX_RECONNECT = 6
+
+function createTransport(roomCode) {
+  const config = getSupabaseConfig()
+  return config ? createSupabaseTransport(roomCode, config) : createLocalTransport(roomCode)
+}
+
+function createLocalTransport(roomCode) {
+  const channel = new BroadcastChannel(`iprachute-duel-${roomCode}`)
+  let messageCb = null
+  let statusCb = null
+  channel.onmessage = (event) => messageCb?.(event.data)
+  queueMicrotask(() => statusCb?.('open'))
+  return {
+    kind: 'local',
+    send(msg) {
+      channel.postMessage(msg)
+    },
+    onMessage(cb) {
+      messageCb = cb
+    },
+    onStatus(cb) {
+      statusCb = cb
+      cb('open')
+    },
+    close() {
+      channel.close()
+    },
+  }
+}
+
+function createSupabaseTransport(roomCode, { url, key }) {
+  const wsUrl = `${url.replace(/^http/, 'ws').replace(/\/$/, '')}/realtime/v1/websocket?apikey=${encodeURIComponent(key)}&vsn=1.0.0`
+  const topic = `realtime:duel:${roomCode}`
+  let ws = null
+  let ref = 0
+  let joined = false
+  let closed = false
+  let attempts = 0
+  let heartbeatTimer = null
+  let messageCb = null
+  let statusCb = null
+  const outbox = []
+
+  const nextRef = () => String(++ref)
+
+  function connect() {
+    if (closed) return
+    statusCb?.('connecting')
+    ws = new WebSocket(wsUrl)
+
+    ws.onopen = () => {
+      attempts = 0
+      ws.send(
+        JSON.stringify({
+          topic,
+          event: 'phx_join',
+          payload: {
+            config: { broadcast: { self: false, ack: false }, presence: { key: '' }, postgres_changes: [] },
+          },
+          ref: nextRef(),
+        }),
+      )
+      clearInterval(heartbeatTimer)
+      heartbeatTimer = setInterval(() => {
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: nextRef() }))
+        }
+      }, HEARTBEAT_MS)
+    }
+
+    ws.onmessage = (event) => {
+      let frame
+      try {
+        frame = JSON.parse(event.data)
+      } catch {
+        return
+      }
+      if (frame.topic !== topic) return
+      if (frame.event === 'phx_reply' && frame.payload?.status === 'ok' && !joined) {
+        joined = true
+        statusCb?.('open')
+        while (outbox.length) rawSend(outbox.shift())
+        return
+      }
+      if (frame.event === 'broadcast' && frame.payload?.event === 'duel') {
+        messageCb?.(frame.payload.payload)
+      }
+    }
+
+    ws.onclose = () => {
+      joined = false
+      clearInterval(heartbeatTimer)
+      if (closed) return
+      if (attempts >= MAX_RECONNECT) {
+        statusCb?.('error')
+        return
+      }
+      attempts += 1
+      statusCb?.('reconnecting')
+      setTimeout(connect, RECONNECT_BASE_MS * attempts)
+    }
+    ws.onerror = () => {
+      try {
+        ws.close()
+      } catch {
+        /* já fechado */
+      }
+    }
+  }
+
+  function rawSend(msg) {
+    ws.send(
+      JSON.stringify({
+        topic,
+        event: 'broadcast',
+        payload: { type: 'broadcast', event: 'duel', payload: msg },
+        ref: nextRef(),
+      }),
+    )
+  }
+
+  connect()
+
+  return {
+    kind: 'supabase',
+    send(msg) {
+      if (joined && ws?.readyState === WebSocket.OPEN) rawSend(msg)
+      else outbox.push(msg)
+    },
+    onMessage(cb) {
+      messageCb = cb
+    },
+    onStatus(cb) {
+      statusCb = cb
+    },
+    close() {
+      closed = true
+      clearInterval(heartbeatTimer)
+      try {
+        ws?.close()
+      } catch {
+        /* já fechado */
+      }
+    },
+  }
+}
+
+// Controlador do duelo online: sala, handshake, orquestração de cada bola,
+// placar, W.O. e revanche. O batedor calcula a colocação da bola e envia;
+// o goleiro resolve a defesa localmente e devolve o resultado — os dois lados
+// aplicam os mesmos eventos no protocolo puro (duel.js).
+const PING_MS = 4000
+const PEER_TIMEOUT_MS = 12000
+const RESULT_TIMEOUT_MS = 8000
+
+function createDuelController(ctx) {
+  // ctx: { game, hud, audio, fx: {ripple, burst, floatText}, reducedMotion,
+  //        getG, startRound, setPhase, goToMenu }
+  const { game, hud, audio } = ctx
+  const el = (id) => document.getElementById(id)
+
+  let transport = null
+  let duel = null
+  let role = null
+  let roomCode = null
+  let peerSeen = 0
+  let pingTimer = null
+  let watchdogTimer = null
+  let awaitTimer = null
+  let pendingKick = null // chute recebido (pode chegar antes do beginBall local)
+  let pendingResult = null // resultado recebido antes da animação local acabar
+  let rematch = { me: false, peer: false }
+
+  const other = (r) => (r === 'host' ? 'guest' : 'host')
+  const iShoot = () => duel && duel.shooter === role
+
+  // ---------- Sala ----------
+  function openLobby(prefillCode = '') {
+    hud.showScreen('duel')
+    el('duel-transport-note').textContent = ''
+    if (prefillCode) {
+      el('duel-code-input').value = prefillCode
+      joinRoom(prefillCode)
+    }
+  }
+
+  function transportNote(kind) {
+    el('duel-transport-note').textContent =
+      kind === 'local'
+        ? 'Sem Supabase configurado: duelo local entre duas abas deste aparelho.'
+        : 'Conectado via Supabase Realtime.'
+  }
+
+  function createRoom() {
+    cleanup()
+    role = 'host'
+    roomCode = makeRoomCode()
+    duel = createDuel(role)
+    el('duel-room-info').hidden = false
+    el('duel-code').textContent = roomCode
+    el('duel-status-host').textContent = 'Aguardando adversário…'
+    connect()
+  }
+
+  function joinRoom(codeRaw) {
+    const code = String(codeRaw ?? el('duel-code-input').value).trim().toUpperCase()
+    if (!/^[A-Z2-9]{4}$/.test(code)) {
+      el('duel-status-join').textContent = 'Código inválido — são 4 letras/números.'
+      return
+    }
+    cleanup()
+    role = 'guest'
+    roomCode = code
+    duel = createDuel(role)
+    el('duel-status-join').textContent = 'Entrando na sala…'
+    connect()
+    send({ type: 'hello', role })
+  }
+
+  function connect() {
+    transport = createTransport(roomCode)
+    transportNote(transport.kind)
+    transport.onStatus((status) => {
+      if (status === 'error') {
+        statusLine('Conexão falhou. Verifique a internet e tente de novo.')
+      } else if (status === 'reconnecting') {
+        statusLine('Reconectando…')
+      }
+    })
+    transport.onMessage((raw) => {
+      const msg = validateDuelMsg(raw)
+      if (!msg) return
+      peerSeen = performance.now()
+      handleMessage(msg)
+    })
+    peerSeen = performance.now()
+    clearInterval(pingTimer)
+    pingTimer = setInterval(() => send({ type: 'ping' }), PING_MS)
+    clearInterval(watchdogTimer)
+    watchdogTimer = setInterval(checkPeer, 3000)
+  }
+
+  function statusLine(text) {
+    if (role === 'host') el('duel-status-host').textContent = text
+    else el('duel-status-join').textContent = text
+  }
+
+  function send(msg) {
+    transport?.send(msg)
+  }
+
+  function checkPeer() {
+    if (!duel || duel.phase !== 'playing') return
+    if (performance.now() - peerSeen > PEER_TIMEOUT_MS) {
+      duel = applyDuelEvent(duel, { type: 'forfeit', by: other(role) })
+      showDuelResult()
+    }
+  }
+
+  // ---------- Mensagens ----------
+  function handleMessage(msg) {
+    switch (msg.type) {
+      case 'hello': {
+        if (role === 'host' && duel.phase === 'lobby') {
+          send({ type: 'hello', role })
+          el('duel-status-host').textContent = 'Adversário conectado! Sorteando…'
+          const firstShooter = Math.random() < 0.5 ? 'host' : 'guest'
+          setTimeout(() => {
+            send({ type: 'start', firstShooter })
+            duel = applyDuelEvent(duel, { type: 'start', firstShooter })
+            beginBall()
+          }, 700)
+        } else if (role === 'guest') {
+          el('duel-status-join').textContent = 'Conectado! Sorteando quem bate…'
+        }
+        break
+      }
+      case 'start': {
+        if (duel.phase === 'done') duel = createDuel(role) // revanche
+        if (duel.phase !== 'lobby') return
+        rematch = { me: false, peer: false }
+        duel = applyDuelEvent(duel, msg)
+        beginBall()
+        break
+      }
+      case 'kick': {
+        if (!duel || duel.phase !== 'playing' || iShoot() || msg.ball !== duel.ball) return
+        pendingKick = msg
+        applyPendingKick()
+        break
+      }
+      case 'ball-result': {
+        if (!duel) return
+        // O resultado pode chegar ANTES da animação local do batedor acabar:
+        // guarda e resolve quando o voo terminar
+        if (game.duelAwaiting) resolveShooterOutcome(msg)
+        else if (iShoot()) pendingResult = msg
+        duel = applyDuelEvent(duel, msg)
+        updateBoard()
+        break
+      }
+      case 'feint': {
+        game.rivalFeintUntil = game.time + 0.9
+        break
+      }
+      case 'rematch': {
+        rematch.peer = true
+        maybeStartRematch()
+        break
+      }
+      case 'forfeit': {
+        duel = applyDuelEvent(duel, msg)
+        if (duel.phase === 'done') showDuelResult()
+        break
+      }
+    }
+  }
+
+  // Aplica o chute pendente quando a rodada do goleiro estiver pronta
+  function applyPendingKick() {
+    if (!pendingKick || !duel) return
+    if (iShoot() || game.mode !== 'keeper' || !game.duelActive) return
+    if (pendingKick.ball !== duel.ball) return
+    const msg = pendingKick
+    game.duelShot = { x: msg.shot.x, y: msg.shot.y, duration: msg.flightDur }
+    game.aiPlan = { feint: msg.specialId === 'paradinha', windup: msg.runupDuration }
+    ctx.setPhase('windup')
+  }
+
+  // ---------- Rodadas ----------
+  function beginBall() {
+    game.duelActive = true
+    game.duelAwaiting = false
+    game.rivalFeintUntil = 0
+    pendingResult = null
+    // pendingKick de bola antiga não vale; da bola atual será aplicado abaixo
+    if (pendingKick && pendingKick.ball !== duel.ball) pendingKick = null
+    game.mode = iShoot() ? 'striker' : 'keeper'
+    el('screen-game').classList.add('is-duel')
+    el('duel-bar').hidden = false
+    hud.showScreen('game')
+    ctx.ensureLoop()
+    ctx.startRound()
+    if (iShoot()) {
+      hud.flash('Você bate!', 'save')
+      hud.setHint('Sua vez: mire, <b>segure e solte</b> · chacoalhe = especial')
+    } else {
+      // Goleiro espera o chute real — nada de rival automático
+      game.aiPlan = { feint: false, windup: Infinity }
+      hud.flash('Defenda!', 'save')
+      hud.setHint('O rival prepara o chute… mire o canto e <b>solte para voar</b>')
+      applyPendingKick()
+    }
+    updateBoard()
+  }
+
+  // Batedor soltou o botão: calcula a colocação, avisa o rival e anima
+  function onShoot({ aim, stability, power, cavadinha, special, pose, runupDuration }) {
+    const placement = computeShotPlacement({
+      aim,
+      stability,
+      power,
+      cavadinha,
+      special,
+      rngSpreadX: Math.random(),
+      rngSpreadY: Math.random(),
+    })
+    const flightDur = cavadinha ? CAVADINHA_DURATION_S : flightDuration(power)
+    game.shot = {
+      pending: true,
+      ...placement,
+      power,
+      cavadinha,
+      special,
+      pose,
+      runupDuration,
+      flightDur,
+      curve: special?.id === 'curva',
+      dive: { x: 0, y: 0.35 },
+      committed: false,
+      saved: false,
+    }
+    send({
+      type: 'kick',
+      ball: duel.ball,
+      shot: placement.shot,
+      power,
+      cavadinha,
+      specialId: special?.id ?? null,
+      runupDuration,
+      flightDur,
+      offTarget: placement.offTarget,
+      overBar: placement.overBar,
+      pose,
+    })
+  }
+
+  function onShooterFlightEnd() {
+    if (pendingResult) {
+      // O veredito já chegou enquanto a bola voava: resolve na hora
+      const msg = pendingResult
+      pendingResult = null
+      resolveShooterOutcome(msg)
+      return
+    }
+    game.duelAwaiting = true
+    ctx.setPhase('await')
+    hud.setHint('O goleiro rival se joga…')
+    clearTimeout(awaitTimer)
+    awaitTimer = setTimeout(() => {
+      if (game.duelAwaiting) {
+        duel = applyDuelEvent(duel, { type: 'forfeit', by: other(role) })
+        showDuelResult()
+      }
+    }, RESULT_TIMEOUT_MS)
+  }
+
+  function resolveShooterOutcome(msg) {
+    clearTimeout(awaitTimer)
+    game.duelAwaiting = false
+    const shot = game.shot
+    shot.saved = Boolean(msg.saved)
+    shot.dive = { x: msg.keeper?.x ?? 0, y: msg.keeper?.y ?? 0.35 }
+    shot.committed = msg.keeper?.phase === 'grounded'
+    if (msg.scored) {
+      const flashText = shot.cavadinha ? 'Cavadinha!' : shot.special ? `${shot.special.nome}!` : 'Goool!'
+      hud.flash(flashText, 'goal')
+      if (!ctx.reducedMotion) ctx.fx.rippleGoal(shot.shot)
+      audio.goal()
+    } else if (shot.saved) {
+      hud.flash('Defendeu o rival!', 'save')
+      audio.save()
+    } else {
+      hud.flash(shot.overBar ? 'Por cima!' : 'Pra fora!', 'miss')
+      audio.miss()
+    }
+    ctx.setPhase('outcome')
+  }
+
+  // Goleiro resolveu a defesa localmente: publica o resultado da bola
+  function keeperResolved(result, defenseTarget) {
+    if (!duel || duel.phase !== 'playing' || iShoot()) return
+    const scored = !result.saved && !pendingKick?.offTarget
+    const msg = {
+      type: 'ball-result',
+      ball: duel.ball,
+      shooter: duel.shooter,
+      scored,
+      saved: result.saved,
+      keeper: { x: defenseTarget?.x ?? 0, y: defenseTarget?.y ?? 0.35, phase: result.phase },
+    }
+    send(msg)
+    duel = applyDuelEvent(duel, msg)
+    updateBoard()
+  }
+
+  // Fim da janela de outcome: próxima bola ou fim de jogo
+  function onOutcomeEnd() {
+    if (!duel) return
+    if (duel.phase === 'done') showDuelResult()
+    else beginBall()
+  }
+
+  function sendFeint() {
+    send({ type: 'feint' })
+  }
+
+  // ---------- Placar ----------
+  function updateBoard() {
+    if (!duel) return
+    window.__duelDbg = { ball: duel.ball, shooter: duel.shooter, phase: duel.phase, score: duel.score }
+    const me = role
+    const rival = other(role)
+    el('duel-score-me').textContent = String(duel.score[me])
+    el('duel-score-rival').textContent = String(duel.score[rival])
+    renderBalls(el('duel-balls-me'), me)
+    renderBalls(el('duel-balls-rival'), rival)
+  }
+
+  function renderBalls(container, side) {
+    const mine = duel.balls.filter((b) => b.shooter === side)
+    const total = Math.max(BALLS_PER_SIDE, mine.length)
+    let html = ''
+    for (let i = 0; i < total; i++) {
+      const b = mine[i]
+      html += `<i class="${b ? (b.scored ? 'is-goal' : 'is-miss') : ''}"></i>`
+    }
+    container.innerHTML = html
+  }
+
+  // ---------- Fim / revanche ----------
+  function showDuelResult() {
+    clearTimeout(awaitTimer)
+    game.duelActive = false
+    game.duelAwaiting = false
+    game.phase = 'menu'
+    const me = duel.score[role]
+    const rival = duel.score[other(role)]
+    const won = duel.winner === role
+    hud.nodes.resultEyebrow.textContent = 'Duelo online'
+    hud.nodes.resultTitle.textContent = duel.winner === null ? 'Empate!' : won ? 'Vitória!' : 'Derrota'
+    hud.nodes.resultTitle.classList.toggle('is-loss', !won && duel.winner !== null)
+    hud.nodes.resultSub.textContent = duel.byForfeit
+      ? won
+        ? 'O rival abandonou a partida. Vitória por W.O.!'
+        : 'Você abandonou a partida.'
+      : `Placar final: ${me} × ${rival}`
+    hud.nodes.resScore.textContent = String(me)
+    hud.nodes.resHits.textContent = String(rival)
+    hud.nodes.resHitsLabel.textContent = 'Rival'
+    hud.nodes.resCombo.textContent = `${duel.balls.length}`
+    hud.nodes.newRecord.hidden = true
+    el('btn-rematch').hidden = duel.byForfeit
+    el('btn-rematch').disabled = false
+    el('btn-again').hidden = true
+    hud.showScreen('result')
+    if (won) audio.whistle()
+  }
+
+  function requestRematch() {
+    rematch.me = true
+    send({ type: 'rematch' })
+    el('btn-rematch').disabled = true
+    hud.nodes.resultSub.textContent = 'Aguardando o rival aceitar a revanche…'
+    maybeStartRematch()
+  }
+
+  function maybeStartRematch() {
+    if (!rematch.me || !rematch.peer) return
+    if (role === 'host') {
+      const firstShooter = other(duel.firstShooter ?? 'host')
+      duel = createDuel(role)
+      send({ type: 'start', firstShooter })
+      duel = applyDuelEvent(duel, { type: 'start', firstShooter })
+      rematch = { me: false, peer: false }
+      beginBall()
+    }
+    // guest espera o start do host (handleMessage cuida)
+  }
+
+  function leave() {
+    if (duel && duel.phase === 'playing') send({ type: 'forfeit', by: role })
+    cleanup()
+    el('screen-game').classList.remove('is-duel')
+    el('duel-bar').hidden = true
+    el('btn-again').hidden = false
+    el('btn-rematch').hidden = true
+    game.duelActive = false
+    game.duelAwaiting = false
+  }
+
+  function cleanup() {
+    clearInterval(pingTimer)
+    clearInterval(watchdogTimer)
+    clearTimeout(awaitTimer)
+    transport?.close()
+    transport = null
+    duel = null
+    pendingKick = null
+    rematch = { me: false, peer: false }
+    el('duel-room-info').hidden = true
+    el('duel-status-join').textContent = ''
+  }
+
+  // ---------- Ligações de DOM ----------
+  function init() {
+    el('btn-duel-create').addEventListener('click', () => {
+      audio.tap()
+      createRoom()
+    })
+    el('btn-duel-join').addEventListener('click', () => {
+      audio.tap()
+      joinRoom()
+    })
+    el('duel-code-input').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') joinRoom()
+    })
+    el('btn-duel-copy').addEventListener('click', async () => {
+      const link = `${location.origin}${location.pathname}?sala=${roomCode}`
+      try {
+        await navigator.clipboard.writeText(`Duelo de pênaltis no Radar FC! ⚽ Entra aí: ${link}`)
+        el('btn-duel-copy').textContent = 'Convite copiado!'
+        setTimeout(() => (el('btn-duel-copy').textContent = 'Copiar convite'), 1800)
+      } catch {
+        prompt('Copie o convite:', link)
+      }
+    })
+    el('btn-duel-back').addEventListener('click', () => {
+      audio.tap()
+      leave()
+      ctx.goToMenu()
+    })
+    el('btn-rematch').addEventListener('click', () => {
+      audio.tap()
+      requestRematch()
+    })
+
+    const params = new URLSearchParams(location.search)
+    const sala = params.get('sala')
+    if (sala) {
+      audio.unlock()
+      openLobby(sala.toUpperCase())
+    }
+  }
+
+  return { init, openLobby, onShoot, onShooterFlightEnd, keeperResolved, onOutcomeEnd, sendFeint, leave }
 }
 
 // Entrada unificada de mira 2D: giroscópio (deviceorientation) com fallback
@@ -2481,7 +3391,9 @@ function renderStriker(ctx, g, game) {
     const x = grounded ? g.gx(shot.dive.x) : g.gx(0) + (g.gx(shot.dive.x) - g.gx(0)) * diveT
     keeperPose = { x, diveDir: dir, diveT: dir === 0 ? diveT * 0.25 : diveT, reachY: shot.dive.y, grounded }
   } else {
-    keeperPose = { x: g.gx(0), diveDir: 0, diveT: 0, sway: game.time, reachY: 0.35 }
+    // No duelo, o goleiro humano rival pode fintar (mensagem 'feint')
+    const rivalFeint = (game.rivalFeintUntil ?? 0) > game.time ? 1 : 0
+    keeperPose = { x: g.gx(0), diveDir: 0, diveT: 0, sway: game.time, reachY: 0.35, feint: rivalFeint }
   }
 
   // Gol marcado: no outcome a bola está na rede, atrás do goleiro
@@ -2512,6 +3424,13 @@ function renderStriker(ctx, g, game) {
     })
     game.spin += (shot.cavadinha ? 7.2 : 18) * dt
     pushTrail(game, pos)
+    drawTrail(ctx, game.trail, g)
+    drawBall(ctx, { ...pos, spin: game.spin }, g)
+  } else if (phase === 'await') {
+    // Duelo: bola congelada na chegada, aguardando o veredito do goleiro rival
+    drawKeeper(ctx, g, keeperPose, 'rival')
+    drawStriker(ctx, g, { progress: 1, kicking: false, pose: shot.pose, palette: 'player' })
+    const pos = ballFlightPos(g, 1, shot.shot.x, shot.shot.y, { curve: shot.curve })
     drawTrail(ctx, game.trail, g)
     drawBall(ctx, { ...pos, spin: game.spin }, g)
   } else if (phase === 'outcome') {
@@ -2638,6 +3557,7 @@ function createHud() {
   const nodes = {
     screens: {
       menu: el('screen-menu'),
+      duel: el('screen-duel'),
       game: el('screen-game'),
       result: el('screen-result'),
     },
@@ -2774,6 +3694,52 @@ const COACH_TIPS = [
   'Sequência de acertos multiplica os pontos: proteja seu combo!',
 ]
 
+// Persistência local (recordes e preferências) com tolerância a modo privado.
+const STORAGE = {
+  striker: 'iprachute:best:striker',
+  keeper: 'iprachute:best:keeper',
+  muted: 'iprachute:muted',
+}
+
+const store = {
+  get(key, fallback = 0) {
+    try {
+      const value = localStorage.getItem(key)
+      return value === null ? fallback : Number(value) || 0
+    } catch {
+      return fallback
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(key, String(value))
+    } catch {
+      /* modo privado: sem persistência */
+    }
+  },
+}
+
+// Aviso de sensor bloqueado. O iOS rejeita o pedido sem mostrar prompt quando
+// a página roda embutida (iframe de outra origem, ex. visualizador de
+// artifacts, ou webview de app) — explicamos o motivo em vez de falhar mudo.
+const isEmbedded = (() => {
+  try {
+    return window.top !== window
+  } catch {
+    return true
+  }
+})()
+
+function showPermissionBlocked(permissionError) {
+  const errorBox = document.getElementById('perm-error')
+  const detail = permissionError ? `<br /><small>Detalhe técnico: ${permissionError}</small>` : ''
+  errorBox.innerHTML = isEmbedded
+    ? '<b>O pedido foi bloqueado pelo iPhone.</b> O jogo está rodando embutido dentro de outra página, e nesse caso o iOS não mostra o pedido de sensor. Abra o jogo direto no Safari (página própria, fora de apps) para inclinar de verdade — ou jogue aqui no modo toque.' + detail
+    : '<b>O pedido foi bloqueado.</b> Se você negou antes: no Safari, toque em <b>aA</b> na barra de endereço → Configurações do Site → ative <b>Movimento e Orientação</b> e tente de novo. Se estiver usando o navegador de dentro de um app (Instagram, Claude etc.), abra o link no Safari.' + detail
+  errorBox.hidden = false
+  document.querySelector('#btn-grant b').textContent = 'Tentar de novo'
+}
+
 // Efeitos sonoros sintetizados com WebAudio — nenhum arquivo externo.
 // O contexto só é criado após o primeiro gesto do usuário (exigência dos navegadores).
 
@@ -2884,11 +3850,6 @@ function createAudio() {
   }
 }
 
-const STORAGE = {
-  striker: 'iprachute:best:striker',
-  keeper: 'iprachute:best:keeper',
-  muted: 'iprachute:muted',
-}
 const AIM_SMOOTH = 0.16 // fração de convergência por frame de 60 fps
 const DELTA_WINDOW = 12
 const NERVE_STEP = 0.09
@@ -2929,26 +3890,14 @@ const game = {
   trail: [],
   highlight: null,
   spin: 0,
+  // Duelo online
+  duelActive: false,
+  duelAwaiting: false,
+  duelShot: null,
+  rivalFeintUntil: 0,
 }
 
-// ---------- Persistência ----------
-const store = {
-  get(key, fallback = 0) {
-    try {
-      const v = localStorage.getItem(key)
-      return v === null ? fallback : Number(v) || 0
-    } catch {
-      return fallback
-    }
-  },
-  set(key, value) {
-    try {
-      localStorage.setItem(key, String(value))
-    } catch {
-      /* modo privado: sem persistência */
-    }
-  },
-}
+window.__game = game // sonda de depuração (somente leitura)
 
 audio.setMuted(store.get(STORAGE.muted, 0) === 1)
 updateMuteButton()
@@ -2978,6 +3927,17 @@ function resizeCanvas() {
 new ResizeObserver(resizeCanvas).observe(canvas.parentElement)
 
 // ---------- Fluxo de telas / sensor ----------
+// setupTarget: para onde ir depois de permissão+calibração
+let setupTarget = 'session' // 'session' | 'lobby'
+function proceedAfterSetup() {
+  if (setupTarget === 'lobby') {
+    setupTarget = 'session'
+    duelCtl.openLobby()
+  } else {
+    startSession()
+  }
+}
+
 function selectMode(mode) {
   audio.unlock()
   audio.tap()
@@ -2997,27 +3957,7 @@ function afterPermission() {
     document.getElementById('btn-calibrate').focus()
     return
   }
-  startSession()
-}
-
-// O iOS bloqueia o pedido de sensor sem mostrar prompt quando a página roda
-// embutida (iframe de outra origem ou webview de app). Explicamos o motivo.
-const isEmbedded = (() => {
-  try {
-    return window.top !== window
-  } catch {
-    return true
-  }
-})()
-
-function showPermissionBlocked() {
-  const errorBox = document.getElementById('perm-error')
-  const detail = tilt.state.permissionError ? `<br /><small>Detalhe técnico: ${tilt.state.permissionError}</small>` : ''
-  errorBox.innerHTML = isEmbedded
-    ? '<b>O pedido foi bloqueado pelo iPhone.</b> O jogo está rodando embutido dentro de outra página, e nesse caso o iOS não mostra o pedido de sensor. Abra o jogo direto no Safari (página própria, fora de apps) para inclinar de verdade — ou jogue aqui no modo toque.' + detail
-    : '<b>O pedido foi bloqueado.</b> Se você negou antes: no Safari, toque em <b>aA</b> na barra de endereço → Configurações do Site → ative <b>Movimento e Orientação</b> e tente de novo. Se estiver usando o navegador de dentro de um app (Instagram, Claude etc.), abra o link no Safari.' + detail
-  errorBox.hidden = false
-  document.querySelector('#btn-grant b').textContent = 'Tentar de novo'
+  proceedAfterSetup()
 }
 
 document.getElementById('btn-grant').addEventListener('click', async () => {
@@ -3026,12 +3966,12 @@ document.getElementById('btn-grant').addEventListener('click', async () => {
     hud.nodes.overlayPermission.hidden = true
     afterPermission()
   } else {
-    showPermissionBlocked()
+    showPermissionBlocked(tilt.state.permissionError)
   }
 })
 document.getElementById('btn-skip-sensor').addEventListener('click', () => {
   hud.nodes.overlayPermission.hidden = true
-  startSession()
+  proceedAfterSetup()
 })
 document.getElementById('btn-calibrate').addEventListener('click', () => {
   // pequena espera para o sensor produzir leitura após a permissão
@@ -3039,20 +3979,26 @@ document.getElementById('btn-calibrate').addEventListener('click', () => {
     tilt.calibrate()
     game.calibrated = true
     hud.nodes.overlayCalibrate.hidden = true
-    startSession()
+    proceedAfterSetup()
   }, 120)
 })
 
 document.getElementById('btn-mode-striker').addEventListener('click', () => selectMode('striker'))
 document.getElementById('btn-mode-keeper').addEventListener('click', () => selectMode('keeper'))
+document.getElementById('btn-mode-duel').addEventListener('click', () => {
+  setupTarget = 'lobby'
+  selectMode(null)
+})
 document.getElementById('btn-back').addEventListener('click', (event) => {
   // Clique por ponteiro solta o foco (senão a barra de espaço fica presa nele)
   if (event.detail > 0) event.currentTarget.blur()
   audio.tap()
+  if (game.duelActive) duelCtl.leave()
   goToMenu()
 })
 document.getElementById('btn-menu').addEventListener('click', () => {
   audio.tap()
+  duelCtl.leave()
   goToMenu()
 })
 document.getElementById('btn-again').addEventListener('click', () => {
@@ -3166,6 +4112,14 @@ tilt.onShake(() => {
     audio.special()
     navigator.vibrate?.(30)
   } else if (game.mode === 'keeper' && game.phase === 'windup') {
+    if (game.duelActive) {
+      // Contra humano a finta é psicológica: o rival VÊ você dançando no gol
+      game.provocation.feintUntil = game.time + 0.9
+      duelCtl.sendFeint()
+      audio.provoke()
+      navigator.vibrate?.([15, 30, 15])
+      return
+    }
     if (game.provocation.nerve >= NERVE_MAX) return // saturou: sem feedback falso
     game.provocation.nerve += 1
     game.provocation.feintUntil = game.time + 0.9
@@ -3299,14 +4253,24 @@ function shoot(holdMs) {
   // Cavadinha cancela o especial armado (sem empilhar bônus de estilo)
   const special = cavadinha ? null : game.special
   const paradinha = special?.id === 'paradinha'
-  const committed = paradinha && Math.random() < special.commitChance
-  const dive = keeperDive2D({ rngZone: Math.random(), rngHeight: Math.random(), rngX: Math.random() })
+  const runupDuration = paradinha ? PARADINHA_RUNUP_S : RUNUP_S
+  const pose = special?.id === 'chaleira' || special?.id === 'calcanhar' ? special.id : 'normal'
 
   // Sem sensor (teclado/toque) a mira parada é trivial: o bônus de precisão
   // só é atingível de verdade segurando o celular
   const usingSensor = tilt.state.mode === 'tilt' && !tilt.state.dragging
   const stability = usingSensor ? game.stability : Math.min(game.stability, PRECISION_THRESHOLD - 0.05)
 
+  if (game.duelActive) {
+    // Duelo: quem defende é um humano — a colocação vai pela rede
+    duelCtl.onShoot({ aim: { ...game.aim }, stability, power, cavadinha, special, pose, runupDuration })
+    setPhase('runup')
+    hud.setHint(paradinha ? '<b>Paradinha!</b> Ele vai pular antes?' : 'Chutando…')
+    return
+  }
+
+  const committed = paradinha && Math.random() < special.commitChance
+  const dive = keeperDive2D({ rngZone: Math.random(), rngHeight: Math.random(), rngX: Math.random() })
   game.shot = {
     pending: true,
     aim: { ...game.aim },
@@ -3316,14 +4280,22 @@ function shoot(holdMs) {
     special,
     dive,
     committed,
-    runupDuration: paradinha ? PARADINHA_RUNUP_S : RUNUP_S,
-    pose: special?.id === 'chaleira' || special?.id === 'calcanhar' ? special.id : 'normal',
+    runupDuration,
+    pose,
   }
   setPhase('runup')
   hud.setHint(paradinha ? '<b>Paradinha!</b> O goleiro vai comprar?' : 'Chutando…')
 }
 
 function launchStrikerShot() {
+  if (game.duelActive) {
+    // Colocação já calculada no momento do chute (foi pela rede)
+    if (game.shot.cavadinha) audio.chip()
+    else audio.kick(game.shot.power)
+    navigator.vibrate?.(10 + Math.round(game.shot.power * 20))
+    setPhase('flight')
+    return
+  }
   const s = game.shot
   const result = resolveShot2D({
     aim: s.aim,
@@ -3391,14 +4363,18 @@ function endStrikerFlight() {
 
 function launchAiShot() {
   const nerveMiss = Math.min(NERVE_CAP, game.provocation.nerve * NERVE_STEP)
-  const shotInfo = aiShot2D({
-    round: game.state.round,
-    rngX: Math.random(),
-    rngY: Math.random(),
-    nerveMiss,
-    rngMiss: Math.random(),
-    rngPower: Math.random(),
-  })
+  // Duelo: a bola veio do batedor humano; solo: rival controlado pela máquina
+  const shotInfo =
+    game.duelShot ??
+    aiShot2D({
+      round: game.state.round,
+      rngX: Math.random(),
+      rngY: Math.random(),
+      nerveMiss,
+      rngMiss: Math.random(),
+      rngPower: Math.random(),
+    })
+  game.duelShot = null
   game.shot = { ...shotInfo, from: { x: g.spotX, y: g.spotY } }
   game.kickTime = game.time
   // Bolão sai com som mais seco; bola colocada, mais macio
@@ -3429,10 +4405,12 @@ function endKeeperFlight() {
       : 0
   const gained = success ? points * game.state.combo : 0
   const prevCombo = game.state.combo
-  game.state = applyResult(game.state, { success, points })
+  // No duelo o que conta é o placar de gols, não a pontuação solo
+  if (!game.duelActive) game.state = applyResult(game.state, { success, points })
   game.shot.saved = saved
   game.shot.rivalMissed = rivalMissed
   game.shot.defenseResult = result
+  if (game.duelActive) duelCtl.keeperResolved(result, game.defense.target)
 
   if (saved) {
     hud.flash(perfect ? 'Defesaça!' : 'Defendeu!', 'save')
@@ -3576,12 +4554,20 @@ function updateGame(dt) {
 
   if (game.mode === 'striker') {
     if (game.phase === 'runup' && game.phaseT >= game.shot.runupDuration) launchStrikerShot()
-    else if (game.phase === 'flight' && game.phaseT >= game.shot.flightDur) endStrikerFlight()
-    else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) nextRoundOrFinish()
+    else if (game.phase === 'flight' && game.phaseT >= game.shot.flightDur) {
+      if (game.duelActive) duelCtl.onShooterFlightEnd()
+      else endStrikerFlight()
+    } else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) {
+      if (game.duelActive) duelCtl.onOutcomeEnd()
+      else nextRoundOrFinish()
+    }
   } else if (game.mode === 'keeper') {
     if (game.phase === 'windup' && game.phaseT >= (game.aiPlan?.windup ?? WINDUP_S)) launchAiShot()
     else if (game.phase === 'flight' && game.phaseT >= game.shot.duration) endKeeperFlight()
-    else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) nextRoundOrFinish()
+    else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) {
+      if (game.duelActive) duelCtl.onOutcomeEnd()
+      else nextRoundOrFinish()
+    }
   }
 }
 
@@ -3606,6 +4592,30 @@ function render() {
   drawVignette(ctx, g)
   ctx.restore()
 }
+
+// ---------- Duelo online ----------
+const duelCtl = createDuelController({
+  game,
+  hud,
+  audio,
+  reducedMotion,
+  fx: {
+    rippleGoal(shotPos) {
+      ripple(fx)
+      burst(fx, g.gx(shotPos.x), g.gy(shotPos.y), 'goal')
+      shake(fx, 8)
+    },
+  },
+  startRound: () => startRound(),
+  setPhase: (p) => setPhase(p),
+  goToMenu: () => goToMenu(),
+  ensureLoop: () => {
+    resizeCanvas()
+    ensureLoop()
+    acquireWakeLock()
+  },
+})
+duelCtl.init()
 
 // Ao voltar para a aba: recalibra (o usuário pode ter mudado de posição) e
 // readquire o wake lock, que o navegador libera quando a aba fica oculta
