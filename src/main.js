@@ -18,6 +18,7 @@ import { initialScore, applyResult, advanceRound, isSessionOver, finishSession }
 import { createTiltInput } from './input/tilt.js'
 import { geometry, drawStadium, drawGoalAndZones, drawVignette } from './render/scene.js'
 import { renderStriker, renderKeeperMode } from './render/composer.js'
+import { initSprites } from './render/sprites.js'
 import { createFx, burst, floatText, shake, ripple, updateFx, shakeOffset, drawFx } from './render/fx.js'
 import { createHud, COACH_TIPS } from './ui/hud.js'
 import { createAudio } from './audio.js'
@@ -40,6 +41,7 @@ const hud = createHud()
 const audio = createAudio()
 const tilt = createTiltInput()
 const fx = createFx()
+initSprites()
 
 const canvas = document.getElementById('scene')
 const ctx = canvas.getContext('2d')

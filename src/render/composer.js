@@ -100,7 +100,8 @@ export function renderStriker(ctx, g, game) {
       drawKeeper(ctx, g, keeperPose, 'rival')
       drawBall(ctx, ballProps, g)
     }
-    drawStriker(ctx, g, { progress: 1, kicking: false, palette: 'player' })
+    // Gol: a raposa comemora de frente para a câmera
+    drawStriker(ctx, g, { progress: 1, kicking: false, pose: ballInNet ? 'comemora' : shot.pose, palette: 'player' })
   }
 }
 

@@ -1,2 +1,5 @@
 node_modules/
 .DS_Store
+assets/sprites/raw/
+dist/sprite-*.png
+dist/mascot-small.png

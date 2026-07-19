@@ -1,4 +1,6 @@
 // Atores da cena: bola, goleiro, batedor (terceira pessoa) e retícula de mira.
+// Quando os sprites da raposa estão carregados, eles substituem os vetores.
+import { hasSprite, drawSprite } from './sprites.js'
 
 export function drawBall(ctx, { x, y, scale = 1, spin = 0, alpha = 1 }, g) {
   const r = g.ballR * scale
@@ -69,7 +71,55 @@ const KEEPER_PALETTES = {
 // pose: { x, diveDir -1..1, diveT 0..1, sway, reachY 0..1 (braços/salto),
 //         crouch 0..1 (agachado carregando impulso), grounded (caído),
 //         feint 0..1 (amplitude da finta provocativa) }
+// Escolhe o sprite do goleiro pela pose. A série amarela serve para os dois
+// modos: a raposa é o protagonista do jogo.
+function drawKeeperSprite(ctx, g, pose) {
+  const dive = pose.diveT ?? 0
+  const dir = pose.diveDir ?? 0
+  const feint = pose.feint ?? 0
+  let name = 'goleiro-parado'
+  let heightMult = 1
+  if (pose.grounded) {
+    name = 'goleiro-caido'
+    heightMult = 0.42
+  } else if (dive > 0.25 && Math.abs(dir) > 0.2) {
+    name = 'goleiro-mergulho'
+    heightMult = 0.55
+  } else if (dive > 0.25) {
+    name = 'goleiro-provocando' // salto vertical de braços esticados
+    heightMult = 1.06
+  } else if ((pose.crouch ?? 0) > 0.3) {
+    name = 'goleiro-agachado'
+    heightMult = 0.72
+  } else if (feint > 0) {
+    name = 'goleiro-provocando'
+    heightMult = 1.02
+  }
+  if (!hasSprite(name)) return false
+
+  const H = g.goalH * 0.74
+  const feintShift = feint * Math.sin((pose.sway ?? 0) * 26) * g.aimHalf * 0.16
+  const jump = Math.sin(dive * Math.PI) * H * (0.2 + (pose.reachY ?? 0.35) * 0.2)
+  if (name === 'goleiro-mergulho') {
+    drawSprite(ctx, name, {
+      x: pose.x + dir * H * 0.32,
+      y: g.goalBaseY - H * 0.34 - jump * 0.4,
+      height: H * heightMult,
+      flip: dir < 0, // o sprite voa para a direita da tela
+      anchor: 'center',
+    })
+  } else {
+    drawSprite(ctx, name, {
+      x: pose.x + feintShift,
+      y: g.goalBaseY + 2 - (dive > 0 ? jump : 0),
+      height: H * heightMult,
+    })
+  }
+  return true
+}
+
 export function drawKeeper(ctx, g, pose, palette = 'rival') {
+  if (drawKeeperSprite(ctx, g, pose)) return
   const colors = KEEPER_PALETTES[palette] ?? KEEPER_PALETTES.rival
   const H = g.goalH * 0.62
   const feetY = g.goalBaseY - 2
@@ -156,10 +206,36 @@ const STRIKER_PALETTES = {
   player: { shirt: '#78f33f', shirtDark: '#1c5a2e', glow: 'rgba(120, 243, 63, 0.3)' },
 }
 
+// Sprite do batedor: só existe a série verde (o jogador); o rival azul
+// continua vetorial até a série 4 ser gerada.
+function drawStrikerSprite(ctx, g, { progress, kicking, pose, palette }) {
+  if (palette !== 'player') return false
+  let name
+  if (pose === 'comemora') name = 'batedor-comemora'
+  else if (kicking) {
+    name = pose === 'chaleira' ? 'batedor-chaleira' : pose === 'calcanhar' ? 'batedor-calcanhar' : 'batedor-chute'
+  } else if (progress > 0.02 && progress < 0.98) {
+    name = Math.floor(progress * 8) % 2 ? 'batedor-corrida-2' : 'batedor-corrida-1'
+  } else {
+    name = 'batedor-parado'
+  }
+  if (!hasSprite(name)) return false
+
+  const H = g.h * 0.2
+  const startX = g.spotX - g.w * 0.24
+  const startY = g.spotY + g.h * 0.04
+  const x = startX + (g.spotX - g.ballR * 1.7 - startX) * progress
+  const y = startY + (g.spotY - startY) * progress
+  drawSprite(ctx, name, { x, y: y + g.ballR * 0.6, height: H })
+  return true
+}
+
 // Batedor em terceira pessoa.
-// opts: { progress 0..1 (corrida), kicking, pose: 'normal'|'chaleira'|'calcanhar',
+// opts: { progress 0..1 (corrida), kicking, pose: 'normal'|'chaleira'|'calcanhar'|'comemora',
 //         palette: 'rival'|'player', scale }
-export function drawStriker(ctx, g, { progress = 0, kicking = false, pose = 'normal', palette = 'rival', scale = 1 }) {
+export function drawStriker(ctx, g, opts) {
+  if (drawStrikerSprite(ctx, g, { progress: 0, kicking: false, pose: 'normal', palette: 'rival', ...opts })) return
+  const { progress = 0, kicking = false, pose = 'normal', palette = 'rival', scale = 1 } = opts
   const colors = STRIKER_PALETTES[palette] ?? STRIKER_PALETTES.rival
   const H = g.h * 0.17 * scale
   const startX = g.spotX - g.w * 0.24
