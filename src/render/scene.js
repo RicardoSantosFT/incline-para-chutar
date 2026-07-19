@@ -27,6 +27,10 @@ export function geometry(w, h) {
     gx(n) {
       return goalCX + n * aimHalf
     },
+    // Converte altura normalizada (0 = chão, 1 = travessão) em y
+    gy(n) {
+      return goalBaseY - n * (goalBaseY - crossbarY)
+    },
   }
 }
 
@@ -256,6 +260,22 @@ export function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = nul
       ctx.shadowBlur = 0
     }
 
+    // Linha da zona alta: bola acima dela multiplica os pontos por 1,5
+    const highY = g.gy(0.6)
+    ctx.strokeStyle = 'rgba(255, 223, 27, 0.4)'
+    ctx.lineWidth = 1.2
+    ctx.setLineDash([4, 6])
+    ctx.beginPath()
+    ctx.moveTo(innerLeft + 4, highY)
+    ctx.lineTo(innerRight - 4, highY)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.font = `800 ${Math.max(8, g.goalH * 0.075)}px Inter, sans-serif`
+    ctx.fillStyle = 'rgba(255, 223, 27, 0.75)'
+    ctx.textAlign = 'right'
+    ctx.fillText('ACIMA ×1,5', innerRight - 8, highY - 5)
+    ctx.textAlign = 'center'
+
     // Alvo radar no centro (o "alvo" da referência)
     const tx = g.gx(0)
     const ty = g.crossbarY + g.goalH * 0.56
@@ -301,19 +321,19 @@ export function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = nul
     ctx.stroke()
   }
 
-  // Traves
+  // Traves: brilho via passe largo translúcido + passe nítido (sem shadowBlur)
   ctx.lineCap = 'round'
-  ctx.strokeStyle = '#e8f2ff'
-  ctx.lineWidth = g.postW
-  ctx.shadowColor = 'rgba(180, 220, 255, 0.5)'
-  ctx.shadowBlur = 8
   ctx.beginPath()
   ctx.moveTo(left + g.postW / 2, g.goalBaseY + g.postW)
   ctx.lineTo(left + g.postW / 2, g.crossbarY)
   ctx.lineTo(right - g.postW / 2, g.crossbarY)
   ctx.lineTo(right - g.postW / 2, g.goalBaseY + g.postW)
+  ctx.strokeStyle = 'rgba(180, 220, 255, 0.28)'
+  ctx.lineWidth = g.postW * 2.4
   ctx.stroke()
-  ctx.shadowBlur = 0
+  ctx.strokeStyle = '#e8f2ff'
+  ctx.lineWidth = g.postW
+  ctx.stroke()
   ctx.lineCap = 'butt'
 }
 

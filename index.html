@@ -25,7 +25,7 @@
           </div>
           <img class="menu-mascot" src="assets/mascot.png" alt="Mascote do Radar FC, uma raposa com celular na mão" width="405" height="385" />
         </header>
-        <p class="menu-sub">Incline seu celular para <b>mirar</b><br />e acerte a zona certa!</p>
+        <p class="menu-sub">Incline para <b>mirar em qualquer canto</b>, segure o botão para dar <b>força</b> e chacoalhe para o <b>golpe especial</b>!</p>
 
         <div class="goal-preview" aria-hidden="true">
           <div class="goal-preview__frame">
@@ -54,7 +54,7 @@
         </ul>
         <p class="hint-note">
           <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 10.6v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.15" fill="currentColor"/></svg>
-          Mantenha o ponto estável no alvo para chutar com precisão!
+          Toque curtinho = cavadinha · bola alta vale ×1,5 · mira livre (dá até pra isolar!)
         </p>
 
         <div class="best-row">
@@ -98,6 +98,7 @@
 
         <div class="scene-wrap">
           <canvas id="scene" role="img" aria-label="Cena do jogo: campo de futebol com o gol ao fundo; a mira acompanha a inclinação do celular"></canvas>
+          <div id="special-badge" class="special-badge" aria-hidden="true" hidden></div>
           <div id="flash-msg" class="flash-msg" aria-hidden="true"></div>
           <div id="round-live" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
@@ -122,8 +123,9 @@
 
         <div class="action-row">
           <button id="btn-shoot" class="cta cta--green cta--big" type="button">
+            <i id="power-fill" class="power-fill" aria-hidden="true"></i>
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 8.1 15.6 10.7 14.2 14.9 9.8 14.9 8.4 10.7Z" fill="currentColor"/></svg>
-            <b>Chutar!</b>
+            <b id="btn-action-label">Segure e solte!</b>
           </button>
           <p id="action-hint" class="action-hint">Incline o celular para mirar</p>
         </div>
@@ -156,6 +158,10 @@
       </section>
 
       <!-- ===== OVERLAYS ===== -->
+      <div class="rotate-overlay" role="alert">
+        <p>Gire o celular para o modo retrato 📱<br /><small>A mira por inclinação precisa da tela em pé.</small></p>
+      </div>
+
       <div id="overlay-permission" class="overlay" role="dialog" aria-modal="true" aria-labelledby="perm-title" hidden>
         <div class="overlay-card">
           <span class="overlay-icon" aria-hidden="true">

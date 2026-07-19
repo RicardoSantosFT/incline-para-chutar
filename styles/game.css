@@ -375,13 +375,44 @@
 }
 
 .action-row { margin-top: 10px; display: grid; gap: 7px; }
-.cta--big { min-height: 60px; }
+.cta--big { min-height: 60px; position: relative; overflow: hidden; }
 .cta--big b { font-size: 20px; }
+.cta--big .icon, .cta--big b { position: relative; z-index: 1; }
+.power-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.34), rgba(255, 223, 27, 0.55));
+  border-radius: inherit;
+  pointer-events: none;
+}
+.special-badge {
+  position: absolute;
+  left: 50%; top: 12px;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(167, 139, 250, 0.7);
+  background: rgba(23, 9, 58, 0.85);
+  color: var(--purple);
+  font-size: 12px; font-weight: 900; font-style: italic;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  box-shadow: var(--glow-purple);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+}
+.special-badge.is-pop { animation: badgePop 320ms var(--ease-out); }
+@keyframes badgePop {
+  0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .special-badge.is-pop { animation: none; } }
 .action-hint {
   text-align: center;
   color: var(--muted);
   font-size: 12.5px;
-  min-height: 19px;
+  min-height: 38px;
 }
 .action-hint b { color: var(--green); }
 
@@ -494,6 +525,21 @@
 }
 .perm-error b { color: var(--yellow); }
 .overlay-card .cta, .overlay-card .ghost-button { width: 100%; }
+
+/* Celular deitado: a mira por inclinação não funciona bem em landscape */
+.rotate-overlay { display: none; }
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
+  .rotate-overlay {
+    position: absolute; inset: 0;
+    z-index: 40;
+    display: grid; place-items: center;
+    background: rgba(1, 6, 18, 0.94);
+    text-align: center;
+    font-size: 18px; font-weight: 800;
+    padding: 24px;
+  }
+  .rotate-overlay small { color: var(--muted); font-weight: 600; font-size: 13px; }
+}
 
 /* Telas muito baixas (celular deitado): compacta o menu */
 @media (max-height: 620px) {

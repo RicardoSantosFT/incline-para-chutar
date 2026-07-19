@@ -1,4 +1,4 @@
-// Atores da cena: bola, goleiro, atacante (modo goleiro) e retícula de mira.
+// Atores da cena: bola, goleiro, batedor (terceira pessoa) e retícula de mira.
 
 export function drawBall(ctx, { x, y, scale = 1, spin = 0, alpha = 1 }, g) {
   const r = g.ballR * scale
@@ -60,27 +60,34 @@ export function drawTrail(ctx, points, g) {
   }
 }
 
-// Goleiro estilizado. pose: { x (px), diveDir -1..1, diveT 0..1, sway }
-// palette: 'rival' (amarelo) | 'player' (verde)
-export function drawKeeper(ctx, g, pose, palette = 'rival') {
-  const colors =
-    palette === 'player'
-      ? { shirt: '#78f33f', shirtDark: '#3fae1d', glow: 'rgba(120, 243, 63, 0.55)' }
-      : { shirt: '#ffdf1b', shirtDark: '#d3a900', glow: 'rgba(255, 223, 27, 0.45)' }
+const KEEPER_PALETTES = {
+  rival: { shirt: '#ffdf1b', shirtDark: '#d3a900', glow: 'rgba(255, 223, 27, 0.45)' },
+  player: { shirt: '#78f33f', shirtDark: '#3fae1d', glow: 'rgba(120, 243, 63, 0.55)' },
+}
 
+// Goleiro estilizado.
+// pose: { x, diveDir -1..1, diveT 0..1, sway, reachY 0..1 (braços/salto),
+//         crouch 0..1 (agachado carregando impulso), grounded (caído),
+//         feint 0..1 (amplitude da finta provocativa) }
+export function drawKeeper(ctx, g, pose, palette = 'rival') {
+  const colors = KEEPER_PALETTES[palette] ?? KEEPER_PALETTES.rival
   const H = g.goalH * 0.62
   const feetY = g.goalBaseY - 2
   const dive = pose.diveT ?? 0
   const dir = pose.diveDir ?? 0
+  const crouch = pose.crouch ?? 0
+  const reachY = pose.reachY ?? 0.35
   const lean = dive * dir * (Math.PI / 3.1)
-  const jump = Math.sin(dive * Math.PI) * H * 0.22
+  const jump = Math.sin(dive * Math.PI) * H * (0.22 + reachY * 0.2)
+  const feintShift = (pose.feint ?? 0) * Math.sin((pose.sway ?? 0) * 26) * g.aimHalf * 0.16
 
   ctx.save()
-  ctx.translate(pose.x, feetY - jump)
-  ctx.rotate(lean)
+  ctx.translate(pose.x + feintShift, feetY - jump + (pose.grounded ? H * 0.34 : 0))
+  ctx.rotate(pose.grounded ? (dir || 1) * (Math.PI / 2.3) : lean)
   ctx.translate(0, -H * 0.5)
+  ctx.scale(1, 1 - crouch * 0.16)
 
-  const sway = dive === 0 ? Math.sin((pose.sway ?? 0) * 2.1) * 0.05 : 0
+  const sway = dive === 0 && !pose.grounded ? Math.sin((pose.sway ?? 0) * 2.1) * 0.05 : 0
   ctx.rotate(sway)
 
   // Halo único e barato no lugar de shadowBlur em cada parte do corpo
@@ -92,11 +99,11 @@ export function drawKeeper(ctx, g, pose, palette = 'rival') {
   ctx.arc(0, -H * 0.1, H * 0.75, 0, Math.PI * 2)
   ctx.fill()
 
-  // Pernas
+  // Pernas (dobradas quando agachado)
   ctx.strokeStyle = '#0b1d3d'
   ctx.lineWidth = H * 0.13
   ctx.lineCap = 'round'
-  const legSpread = dive > 0 ? 0.34 : 0.16
+  const legSpread = dive > 0 ? 0.34 : 0.16 + crouch * 0.14
   ctx.beginPath()
   ctx.moveTo(0, H * 0.12)
   ctx.lineTo(-H * legSpread * 0.6, H * 0.5)
@@ -112,22 +119,23 @@ export function drawKeeper(ctx, g, pose, palette = 'rival') {
   roundRect(ctx, -H * 0.16, -H * 0.02, H * 0.32, H * 0.2, H * 0.08)
   ctx.fill()
 
-  // Braços: abertos, esticam na direção do mergulho
+  // Braços: sobem conforme a mira/salto é alto; esticam no mergulho
   ctx.strokeStyle = colors.shirt
   ctx.lineWidth = H * 0.11
   const reach = 0.4 + dive * 0.45
+  const armLift = 0.18 + reachY * 0.5
   ctx.beginPath()
   ctx.moveTo(-H * 0.12, -H * 0.18)
-  ctx.lineTo(-H * reach * (dir < 0 ? 1.15 : 0.8), -H * (0.3 + dive * 0.45))
+  ctx.lineTo(-H * reach * (dir < 0 ? 1.15 : 0.8), -H * (armLift + dive * 0.45))
   ctx.moveTo(H * 0.12, -H * 0.18)
-  ctx.lineTo(H * reach * (dir > 0 ? 1.15 : 0.8), -H * (0.3 + dive * 0.45))
+  ctx.lineTo(H * reach * (dir > 0 ? 1.15 : 0.8), -H * (armLift + dive * 0.45))
   ctx.stroke()
 
   // Luvas
   ctx.fillStyle = '#f2f6ff'
   ctx.beginPath()
-  ctx.arc(-H * reach * (dir < 0 ? 1.15 : 0.8), -H * (0.3 + dive * 0.45), H * 0.075, 0, Math.PI * 2)
-  ctx.arc(H * reach * (dir > 0 ? 1.15 : 0.8), -H * (0.3 + dive * 0.45), H * 0.075, 0, Math.PI * 2)
+  ctx.arc(-H * reach * (dir < 0 ? 1.15 : 0.8), -H * (armLift + dive * 0.45), H * 0.075, 0, Math.PI * 2)
+  ctx.arc(H * reach * (dir > 0 ? 1.15 : 0.8), -H * (armLift + dive * 0.45), H * 0.075, 0, Math.PI * 2)
   ctx.fill()
 
   // Cabeça
@@ -143,9 +151,17 @@ export function drawKeeper(ctx, g, pose, palette = 'rival') {
   ctx.restore()
 }
 
-// Atacante rival (modo goleiro): silhueta escura se aproximando da bola
-export function drawStriker(ctx, g, { progress = 0, kicking = false }) {
-  const H = g.h * 0.17
+const STRIKER_PALETTES = {
+  rival: { shirt: '#25a8ff', shirtDark: '#123058', glow: 'rgba(37, 168, 255, 0.28)' },
+  player: { shirt: '#78f33f', shirtDark: '#1c5a2e', glow: 'rgba(120, 243, 63, 0.3)' },
+}
+
+// Batedor em terceira pessoa.
+// opts: { progress 0..1 (corrida), kicking, pose: 'normal'|'chaleira'|'calcanhar',
+//         palette: 'rival'|'player', scale }
+export function drawStriker(ctx, g, { progress = 0, kicking = false, pose = 'normal', palette = 'rival', scale = 1 }) {
+  const colors = STRIKER_PALETTES[palette] ?? STRIKER_PALETTES.rival
+  const H = g.h * 0.17 * scale
   const startX = g.spotX - g.w * 0.24
   const startY = g.spotY + g.h * 0.04
   const x = startX + (g.spotX - g.ballR * 1.7 - startX) * progress
@@ -156,19 +172,35 @@ export function drawStriker(ctx, g, { progress = 0, kicking = false }) {
   const stride = kicking ? 0 : Math.sin(progress * Math.PI * 6) * 0.22
 
   const halo = ctx.createRadialGradient(0, -H * 0.4, H * 0.08, 0, -H * 0.4, H * 0.7)
-  halo.addColorStop(0, 'rgba(37, 168, 255, 0.28)')
+  halo.addColorStop(0, colors.glow)
   halo.addColorStop(1, 'rgba(0, 0, 0, 0)')
   ctx.fillStyle = halo
   ctx.beginPath()
   ctx.arc(0, -H * 0.4, H * 0.7, 0, Math.PI * 2)
   ctx.fill()
 
+  // Leve inclinação do corpo por golpe
+  if (kicking && pose === 'chaleira') ctx.rotate(-0.18)
+  if (kicking && pose === 'calcanhar') ctx.rotate(0.1)
+
   // Pernas
   ctx.strokeStyle = '#0a1830'
   ctx.lineWidth = H * 0.13
   ctx.lineCap = 'round'
   ctx.beginPath()
-  if (kicking) {
+  if (kicking && pose === 'chaleira') {
+    // Perna de apoio + chute cruzando por trás da outra perna
+    ctx.moveTo(0, -H * 0.32)
+    ctx.lineTo(-H * 0.1, 0)
+    ctx.moveTo(0, -H * 0.32)
+    ctx.lineTo(-H * 0.38, -H * 0.06)
+  } else if (kicking && pose === 'calcanhar') {
+    // De costas para a bola: calcanhar vai para trás e para cima
+    ctx.moveTo(0, -H * 0.32)
+    ctx.lineTo(-H * 0.12, 0)
+    ctx.moveTo(0, -H * 0.32)
+    ctx.lineTo(H * 0.3, -H * 0.42)
+  } else if (kicking) {
     ctx.moveTo(0, -H * 0.32)
     ctx.lineTo(-H * 0.14, 0)
     ctx.moveTo(0, -H * 0.32)
@@ -182,10 +214,10 @@ export function drawStriker(ctx, g, { progress = 0, kicking = false }) {
   ctx.stroke()
 
   // Tronco + cabeça
-  ctx.fillStyle = '#123058'
+  ctx.fillStyle = colors.shirtDark
   roundRect(ctx, -H * 0.15, -H * 0.74, H * 0.3, H * 0.45, H * 0.1)
   ctx.fill()
-  ctx.fillStyle = '#25a8ff'
+  ctx.fillStyle = colors.shirt
   roundRect(ctx, -H * 0.15, -H * 0.74, H * 0.3, H * 0.12, H * 0.06)
   ctx.fill()
   ctx.fillStyle = '#c8935f'
@@ -208,7 +240,6 @@ export function drawReticle(ctx, g, { x, y, stability, time }) {
   ctx.translate(x, y)
 
   // Disco escuro atrás da retícula: garante contraste sobre qualquer fundo
-  // (inclusive o goleiro amarelo) sem precisar de shadowBlur
   ctx.fillStyle = 'rgba(2, 12, 37, 0.45)'
   ctx.beginPath()
   ctx.arc(0, 0, r * 1.14, 0, Math.PI * 2)

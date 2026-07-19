@@ -1,10 +1,18 @@
-import { TILT_RANGE_DEG } from './constants.js'
+import { TILT_RANGE_X_DEG, TILT_RANGE_Y_DEG, AIM_LIMIT_Y } from './constants.js'
 
-// Converte o ângulo gamma do sensor (graus) em mira normalizada -1..1,
-// relativa à posição em que o jogador calibrou o aparelho.
-export function gammaToAim(gamma, baseline, range = TILT_RANGE_DEG) {
+// Converte o ângulo gamma do sensor (graus) em mira horizontal, relativa à
+// posição calibrada. `limit` acima de 1 deixa a mira passar da trave
+// (modo artilheiro); o padrão 1 satura dentro do gol (modo goleiro).
+export function gammaToAim(gamma, baseline, range = TILT_RANGE_X_DEG, limit = 1) {
   const value = (gamma - baseline) / range
-  return Math.max(-1, Math.min(1, value))
+  return Math.max(-limit, Math.min(limit, value))
+}
+
+// Converte o ângulo beta (inclinar para frente/trás) em altura da mira:
+// 0 = rente ao chão, 1 = travessão, acima de 1 = por cima do gol.
+export function betaToAimY(beta, baseline, range = TILT_RANGE_Y_DEG) {
+  const value = 0.5 + (beta - baseline) / range
+  return Math.max(0, Math.min(AIM_LIMIT_Y, value))
 }
 
 // Suavização exponencial: evita que a mira trema junto com o ruído do sensor.

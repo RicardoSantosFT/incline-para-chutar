@@ -61,9 +61,22 @@ export function createAudio() {
     setMuted(value) {
       muted = value
     },
-    kick() {
-      tone({ freq: 160, to: 42, time: 0.16, type: 'sine', gain: 0.5 })
-      noise({ time: 0.08, gain: 0.1, filterFrom: 900, filterTo: 500 })
+    kick(power = 0.6) {
+      tone({ freq: 140 + power * 60, to: 42, time: 0.12 + power * 0.08, type: 'sine', gain: 0.3 + power * 0.35 })
+      noise({ time: 0.06 + power * 0.05, gain: 0.06 + power * 0.09, filterFrom: 900, filterTo: 500 })
+    },
+    chip() {
+      // Cavadinha: toque macio e agudo
+      tone({ freq: 320, to: 240, time: 0.18, type: 'sine', gain: 0.18 })
+    },
+    special() {
+      tone({ freq: 520, time: 0.08, type: 'triangle', gain: 0.14 })
+      tone({ freq: 700, time: 0.09, type: 'triangle', gain: 0.14, delay: 0.07 })
+      tone({ freq: 950, time: 0.12, type: 'triangle', gain: 0.14, delay: 0.14 })
+    },
+    provoke() {
+      tone({ freq: 240, to: 320, time: 0.07, type: 'square', gain: 0.07 })
+      tone({ freq: 320, to: 240, time: 0.07, type: 'square', gain: 0.07, delay: 0.09 })
     },
     goal() {
       // Torcida explodindo + acorde

@@ -22,6 +22,9 @@ export function createHud() {
     flash: el('flash-msg'),
     live: el('round-live'),
     shootBtn: el('btn-shoot'),
+    shootLabel: el('btn-action-label'),
+    powerFill: el('power-fill'),
+    specialBadge: el('special-badge'),
     actionHint: el('action-hint'),
     resultEyebrow: el('result-eyebrow'),
     resultTitle: el('result-title'),
@@ -56,6 +59,7 @@ export function createHud() {
     nodes.hits.textContent = `${state.hits} ${label}`
   }
 
+  let flashTimer = null
   function flash(text, kind) {
     nodes.flash.textContent = text
     nodes.flash.className = `flash-msg flash-msg--${kind}`
@@ -63,6 +67,9 @@ export function createHud() {
     void nodes.flash.offsetWidth
     nodes.flash.classList.add('is-on')
     nodes.live.textContent = text
+    // Com prefers-reduced-motion a animação não roda: remove a classe na mão
+    clearTimeout(flashTimer)
+    flashTimer = setTimeout(() => nodes.flash.classList.remove('is-on'), 1200)
   }
 
   function setHint(html) {
@@ -70,7 +77,7 @@ export function createHud() {
   }
 
   function setSensorChip(mode) {
-    const labels = { tilt: 'Giroscópio', touch: 'Modo toque', teclado: 'Teclado ← →' }
+    const labels = { tilt: 'Giroscópio', touch: 'Modo toque', teclado: 'Teclado' }
     nodes.sensorChip.textContent = labels[mode] ?? mode
     nodes.sensorChip.classList.toggle('is-fallback', mode !== 'tilt')
   }
@@ -83,15 +90,52 @@ export function createHud() {
     nodes.shootBtn.disabled = !enabled
   }
 
-  return { nodes, showScreen, updateScore, updateHits, flash, setHint, setSensorChip, setShootVisible, setShootEnabled }
+  function setShootLabel(text) {
+    nodes.shootLabel.textContent = text
+  }
+
+  function setPower(fraction) {
+    nodes.powerFill.style.width = `${Math.round(fraction * 100)}%`
+  }
+
+  function showSpecial(name) {
+    if (!name) {
+      nodes.specialBadge.hidden = true
+      return
+    }
+    nodes.specialBadge.textContent = `Especial: ${name}`
+    nodes.specialBadge.hidden = false
+    nodes.specialBadge.classList.remove('is-pop')
+    void nodes.specialBadge.offsetWidth
+    nodes.specialBadge.classList.add('is-pop')
+    // O selo é visual; leitores de tela recebem pela região viva
+    nodes.live.textContent = `Especial armado: ${name}`
+  }
+
+  return {
+    nodes,
+    showScreen,
+    updateScore,
+    updateHits,
+    flash,
+    setHint,
+    setSensorChip,
+    setShootVisible,
+    setShootEnabled,
+    setShootLabel,
+    setPower,
+    showSpecial,
+  }
 }
 
 export const COACH_TIPS = [
-  'Incline devagar para ter mais controle e mire no centro para mais pontos!',
+  'Incline devagar para ter mais controle: agora a mira é livre, dá até para isolar!',
   'O arco da retícula mostra sua estabilidade: espere ele fechar antes de chutar.',
-  'Chute instável desvia! Segure a mira parada por um instante antes de bater.',
-  'No modo goleiro, fique no centro e reaja: incline forte na hora do chute.',
-  'Cantos valem menos, mas o goleiro rival adora ficar no meio. Varie o alvo!',
+  'Bola alta vale ×1,5 — mas cuidado para não mandar por cima do travessão.',
+  'Segure o botão para dar força. Toque curtinho é cavadinha: humilha goleiro que pulou!',
+  'Chacoalhe o celular antes de bater para armar um golpe especial.',
+  'No modo goleiro, chacoalhe durante a corrida do rival para deixá-lo nervoso.',
+  'No modo goleiro, segure Defender e solte na hora do chute: sem o impulso o alcance é curto.',
+  'Chute no máximo de força sai um foguete, mas fica mais difícil de colocar no canto.',
   'Sequência de acertos multiplica os pontos: proteja seu combo!',
-  'Errar o gol zera o combo. Melhor um chute calmo do que um chute afobado.',
 ]
