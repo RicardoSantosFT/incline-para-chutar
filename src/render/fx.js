@@ -2,7 +2,16 @@
 // O estado vive em um objeto criado por createFx(); o jogo chama update/draw.
 
 export function createFx() {
-  return { particles: [], floats: [], shakeT: 0, shakeMag: 0, ripple: 0 }
+  return { particles: [], floats: [], shakeT: 0, shakeMag: 0, shakePhase: 0, ripple: 0 }
+}
+
+export function resetFx(fx) {
+  fx.particles = []
+  fx.floats = []
+  fx.shakeT = 0
+  fx.shakeMag = 0
+  fx.shakePhase = 0
+  fx.ripple = 0
 }
 
 const GOAL_COLORS = ['120, 243, 63', '167, 139, 250', '248, 250, 255', '255, 223, 27']
@@ -53,16 +62,18 @@ export function updateFx(fx, dt) {
   fx.floats = fx.floats.filter((f) => f.age < f.life)
 
   fx.shakeT = Math.max(0, fx.shakeT - dt)
+  fx.shakePhase += dt * 62
   fx.ripple = Math.max(0, fx.ripple - dt * 1.6)
 }
 
-// Deslocamento de tremida a aplicar no ctx antes de desenhar o frame
+// Deslocamento de tremida a aplicar no ctx antes de desenhar o frame.
+// Determinístico (fase senoidal): render não consome Math.random.
 export function shakeOffset(fx) {
   if (fx.shakeT <= 0) return { x: 0, y: 0 }
   const decay = fx.shakeT / 0.4
   return {
-    x: (Math.random() - 0.5) * 2 * fx.shakeMag * decay,
-    y: (Math.random() - 0.5) * 2 * fx.shakeMag * decay,
+    x: Math.sin(fx.shakePhase) * fx.shakeMag * decay,
+    y: Math.cos(fx.shakePhase * 1.31) * fx.shakeMag * decay,
   }
 }
 

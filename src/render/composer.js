@@ -1,4 +1,5 @@
-import { AIM_LIMIT_X, AIM_LIMIT_Y, KEEPER_CLAMP, WINDUP_S, DIVE_ANIM_S, DEFENSE_CHARGE_S } from '../game/constants.js'
+import { AIM_LIMIT_X, AIM_LIMIT_Y, WINDUP_S } from '../game/constants.js'
+import { STRETCH_WINDOW_S } from '../game/keeper.js'
 import { drawBall, drawTrail, drawKeeper, drawStriker, drawReticle } from './actors.js'
 
 // Composição das cenas dos dois modos. Recebe o estado do jogo e desenha;
@@ -106,33 +107,62 @@ export function renderStriker(ctx, g, game) {
 }
 
 export function renderKeeperMode(ctx, g, game) {
-  const { phase, phaseT, shot, defense } = game
+  const { phase, phaseT, shot, defense, aiPlan } = game
   const dt = game.frameDt ?? 0.016
 
-  // Goleiro do jogador segue a mira 2D
-  const aimX = Math.max(-KEEPER_CLAMP, Math.min(KEEPER_CLAMP, game.aim.x))
-  const reachY = Math.max(0, Math.min(1, game.aim.y))
-  const charging = defense && defense.chargeStart !== null && !defense.released
-  const crouch = charging ? Math.min(1, (game.time - defense.chargeStart) / DEFENSE_CHARGE_S) : 0
-  const feint = game.time < game.provocation.feintUntil ? 1 : 0
-  let pose = { x: g.gx(aimX), diveDir: 0, diveT: 0, sway: game.time, reachY, crouch, feint }
+  // Goleiro: parado no centro escolhendo o alvo; ao soltar, voa até ele
+  let pose
   if (defense?.released) {
-    const sinceDive = game.time - defense.releaseTime
-    const diveT = Math.min(1, sinceDive / DIVE_ANIM_S)
-    const grounded = sinceDive > 0.55
-    pose = { x: g.gx(aimX), diveDir: defense.diveDir, diveT, reachY, grounded, sway: game.time }
+    const elapsed = game.time - defense.releaseTime
+    const f = Math.min(1, elapsed / Math.max(0.01, defense.diveTime))
+    const tx = defense.target.x
+    const dir = Math.abs(tx) < 0.18 ? 0 : Math.sign(tx)
+    const x = g.gx(0) + (g.gx(tx) - g.gx(0)) * f
+    // Caído no mesmo instante em que a física vira 'grounded'
+    const grounded = elapsed > defense.diveTime + STRETCH_WINDOW_S
+    // Altura do voo acompanha a lógica: interpola até a altura do alvo
+    const keeperY = grounded ? 0.35 : 0.35 + (defense.target.y - 0.35) * f
+    pose = { x, diveDir: dir, diveT: f, reachY: defense.target.y, keeperY, grounded, sway: game.time }
+  } else {
+    const feint = game.time < game.provocation.feintUntil ? 1 : 0
+    pose = {
+      x: g.gx(0),
+      diveDir: 0,
+      diveT: 0,
+      sway: game.time,
+      reachY: 0.35,
+      crouch: defense?.holding ? 0.55 : 0,
+      feint,
+    }
   }
 
   const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.rivalMissed
+  // Retícula do goleiro: escolhe o ponto do voo até o momento de soltar
+  const showReticle = !defense?.released && (phase === 'windup' || phase === 'flight')
 
   if (phase === 'windup') {
     drawKeeper(ctx, g, pose, 'player')
-    const progress = Math.min(1, phaseT / WINDUP_S)
-    drawStriker(ctx, g, { progress, kicking: progress > 0.82, palette: 'rival' })
+    const windup = aiPlan?.windup ?? WINDUP_S
+    const t = Math.min(1, phaseT / windup)
+    // Paradinha do rival: corre, congela no meio, e só então conclui
+    const progress = aiPlan?.feint
+      ? t < 0.38
+        ? (t / 0.38) * 0.7
+        : t < 0.6
+          ? 0.7
+          : 0.7 + ((t - 0.6) / 0.4) * 0.3
+      : t
+    drawStriker(ctx, g, { progress, kicking: progress > 0.9, palette: 'rival' })
     drawBall(ctx, { x: g.spotX, y: g.spotY, scale: 1, spin: 0 }, g)
   } else if (phase === 'flight') {
     drawKeeper(ctx, g, pose, 'player')
     drawStriker(ctx, g, { progress: 1, kicking: true, palette: 'rival' })
+    // Retícula atrás da bola: escurecer a bola no instante da decisão atrapalha
+    if (showReticle) {
+      const rx = Math.max(-1, Math.min(1, game.aim.x))
+      const ry = Math.max(0.08, Math.min(1, game.aim.y))
+      drawReticle(ctx, g, { x: g.gx(rx), y: g.gy(ry), stability: game.stability, time: game.time })
+    }
     const t = Math.min(1, phaseT / shot.duration)
     const pos = ballFlightPos(g, t, shot.x, shot.y, {})
     game.spin += 20.4 * dt
@@ -162,5 +192,11 @@ export function renderKeeperMode(ctx, g, game) {
       drawBall(ctx, ballProps, g)
     }
     drawStriker(ctx, g, { progress: 1, kicking: false, palette: 'rival' })
+  }
+
+  if (showReticle && phase === 'windup') {
+    const rx = Math.max(-1, Math.min(1, game.aim.x))
+    const ry = Math.max(0.08, Math.min(1, game.aim.y))
+    drawReticle(ctx, g, { x: g.gx(rx), y: g.gy(ry), stability: game.stability, time: game.time })
   }
 }

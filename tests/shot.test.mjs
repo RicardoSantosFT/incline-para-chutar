@@ -38,23 +38,23 @@ test('bola no meio da posição do goleiro é defendida', () => {
 })
 
 test('alcance é elíptico: mesma distância vale diferente em X e Y', () => {
-  const dx = KEEPER_REACH_X * 1.05
+  const dist = KEEPER_REACH_X
   const savedWide = resolveShot2D({
-    aim: { x: dx, y: 0.3 },
+    aim: { x: dist, y: 0.3 },
     stability: 1,
     power: 0.6,
     keeper: { x: 0, y: 0.3 },
     ...NO_SPREAD,
   }).saved
   const savedTall = resolveShot2D({
-    aim: { x: 0, y: 0.3 + dx },
+    aim: { x: 0, y: 0.3 + dist },
     stability: 1,
     power: 0.6,
     keeper: { x: 0, y: 0.3 },
     ...NO_SPREAD,
   }).saved
-  assert.equal(savedWide, false, 'fora do alcance horizontal')
-  assert.equal(savedTall, true, 'alcance vertical é maior que o horizontal')
+  assert.equal(savedWide, false, 'na horizontal a mesma distância escapa')
+  assert.equal(savedTall, true, 'alcance vertical é um pouco maior que o horizontal')
 })
 
 test('mira além da trave sai fora; por cima do travessão também', () => {

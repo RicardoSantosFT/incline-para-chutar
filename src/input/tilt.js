@@ -152,13 +152,18 @@ export function createTiltInput() {
     element.addEventListener('pointerup', onPointerEnd)
     element.addEventListener('pointercancel', onPointerEnd)
   }
+  // Rastreia o dedo que mira NA CENA (pode ser o segundo dedo do toque,
+  // com o primeiro segurando o botão de ação fora da cena)
+  let dragPointerId = null
   function onPointer(event) {
-    // Segundo dedo não mira nem conta toque (evita disparos acidentais)
-    if (!event.isPrimary) return
     if (event.type === 'pointerdown') {
+      if (dragPointerId !== null) return // já existe um dedo mirando
+      dragPointerId = event.pointerId
       state.dragging = true
       state.dragArea.setPointerCapture?.(event.pointerId)
       tapInfo = { t: performance.now(), x: event.clientX, y: event.clientY, aimBefore: { ...state.aim } }
+    } else if (event.pointerId !== dragPointerId) {
+      return
     }
     if (!state.dragging) return
     const rect = state.dragArea.getBoundingClientRect()
@@ -172,7 +177,8 @@ export function createTiltInput() {
     if (state.mode !== 'tilt') state.mode = 'touch'
   }
   function onPointerEnd(event) {
-    if (event && !event.isPrimary) return
+    if (event && event.pointerId !== dragPointerId) return
+    dragPointerId = null
     state.dragging = false
     if (!tapInfo || !event) return
     const now = performance.now()

@@ -100,10 +100,12 @@ function drawKeeperSprite(ctx, g, pose) {
   const H = g.goalH * 0.74
   const feintShift = feint * Math.sin((pose.sway ?? 0) * 26) * g.aimHalf * 0.16
   const jump = Math.sin(dive * Math.PI) * H * (0.2 + (pose.reachY ?? 0.35) * 0.2)
+  // Elevação real do voo: keeperY (0..1 na boca do gol) sobe o goleiro
+  const lift = Math.max(0, (pose.keeperY ?? 0.35) - 0.35) * g.goalH * 0.9
   if (name === 'goleiro-mergulho') {
     drawSprite(ctx, name, {
       x: pose.x + dir * H * 0.32,
-      y: g.goalBaseY - H * 0.34 - jump * 0.4,
+      y: g.goalBaseY - H * 0.34 - jump * 0.4 - lift,
       height: H * heightMult,
       flip: dir < 0, // o sprite voa para a direita da tela
       anchor: 'center',
@@ -111,7 +113,7 @@ function drawKeeperSprite(ctx, g, pose) {
   } else {
     drawSprite(ctx, name, {
       x: pose.x + feintShift,
-      y: g.goalBaseY + 2 - (dive > 0 ? jump : 0),
+      y: g.goalBaseY + 2 - (dive > 0 ? jump : 0) - lift,
       height: H * heightMult,
     })
   }
@@ -130,9 +132,10 @@ export function drawKeeper(ctx, g, pose, palette = 'rival') {
   const lean = dive * dir * (Math.PI / 3.1)
   const jump = Math.sin(dive * Math.PI) * H * (0.22 + reachY * 0.2)
   const feintShift = (pose.feint ?? 0) * Math.sin((pose.sway ?? 0) * 26) * g.aimHalf * 0.16
+  const lift = Math.max(0, (pose.keeperY ?? 0.35) - 0.35) * g.goalH * 0.9
 
   ctx.save()
-  ctx.translate(pose.x + feintShift, feetY - jump + (pose.grounded ? H * 0.34 : 0))
+  ctx.translate(pose.x + feintShift, feetY - jump - lift + (pose.grounded ? H * 0.34 : 0))
   ctx.rotate(pose.grounded ? (dir || 1) * (Math.PI / 2.3) : lean)
   ctx.translate(0, -H * 0.5)
   ctx.scale(1, 1 - crouch * 0.16)

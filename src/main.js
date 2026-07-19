@@ -7,19 +7,17 @@ import {
   PARADINHA_RUNUP_S,
   WINDUP_S,
   OUTCOME_S,
-  DEFENSE_CHARGE_S,
-  KEEPER_CLAMP,
 } from './game/constants.js'
 import { powerFromHold, isCavadinha, flightDuration, CAVADINHA_DURATION_S } from './game/power.js'
 import { pickSpecial } from './game/specials.js'
 import { resolveShot2D, keeperDive2D } from './game/shot.js'
-import { aiShot2D, resolveSave2D, savePoints2D, diveReachMult } from './game/keeper.js'
+import { aiShot2D, aiKickPlan, savePoints2D, diveTravelTime, resolveKeeperDefense, DIVE_START } from './game/keeper.js'
 import { initialScore, applyResult, advanceRound, isSessionOver, finishSession } from './game/scoring.js'
 import { createTiltInput } from './input/tilt.js'
 import { geometry, drawStadium, drawGoalAndZones, drawVignette } from './render/scene.js'
 import { renderStriker, renderKeeperMode } from './render/composer.js'
 import { initSprites } from './render/sprites.js'
-import { createFx, burst, floatText, shake, ripple, updateFx, shakeOffset, drawFx } from './render/fx.js'
+import { createFx, resetFx, burst, floatText, shake, ripple, updateFx, shakeOffset, drawFx } from './render/fx.js'
 import { createHud, COACH_TIPS } from './ui/hud.js'
 import { createAudio } from './audio.js'
 
@@ -61,7 +59,9 @@ const game = {
   charge: null, // { start } — segurando o botão de chute
   special: null, // golpe armado no chacoalhão
   shot: null, // dados da bola em jogo
-  defense: null, // { chargeStart, released, power, releaseTime, diveDir }
+  defense: null, // { holding, released, releaseTime, target, diveTime }
+  aiPlan: null, // { feint, windup } — plano da cobrança do rival
+  kickTime: 0, // instante em que o rival bateu (detecta quem comprou finta)
   provocation: { nerve: 0, feintUntil: 0 },
   trail: [],
   highlight: null,
@@ -210,6 +210,7 @@ document.getElementById('btn-mute').addEventListener('click', (event) => {
 // actionHeld deixa "segurar atravessando a troca de fase" funcionar.
 let actionPointerId = null
 let actionHeld = false
+let actionKeyHeld = false
 
 hud.nodes.shootBtn.addEventListener('pointerdown', (event) => {
   event.preventDefault()
@@ -239,16 +240,20 @@ window.addEventListener('keydown', (event) => {
   const focused = document.activeElement
   if (focused?.tagName === 'BUTTON' && focused !== hud.nodes.shootBtn) return
   actionHeld = true
+  actionKeyHeld = true
   if (game.phase === 'aim' || game.phase === 'windup' || game.phase === 'flight') {
     event.preventDefault()
     onActionPress()
   }
 })
 window.addEventListener('keyup', (event) => {
-  if (event.key === ' ' || event.key === 'Enter') {
-    actionHeld = false
-    onActionRelease()
-  }
+  if (event.key !== ' ' && event.key !== 'Enter') return
+  // keyup solto sem keydown próprio não pode largar um hold do ponteiro
+  if (!actionKeyHeld) return
+  actionKeyHeld = false
+  if (actionPointerId !== null) return
+  actionHeld = false
+  onActionRelease()
 })
 
 function onActionPress() {
@@ -256,9 +261,9 @@ function onActionPress() {
     game.charge = { start: game.time, notifiedFull: false }
     hud.setShootLabel('Solte para chutar!')
   } else if (game.mode === 'keeper' && (game.phase === 'windup' || game.phase === 'flight')) {
-    if (game.defense && !game.defense.released && game.defense.chargeStart === null) {
-      game.defense.chargeStart = game.time
-      game.defense.notifiedFull = false
+    if (game.defense && !game.defense.released) {
+      game.defense.holding = true
+      hud.setShootLabel('Solte para voar!')
     }
   }
 }
@@ -272,17 +277,21 @@ function onActionRelease() {
   } else if (
     game.mode === 'keeper' &&
     (game.phase === 'windup' || game.phase === 'flight') &&
-    game.defense &&
-    game.defense.chargeStart !== null &&
+    game.defense?.holding &&
     !game.defense.released
   ) {
-    const heldS = game.time - game.defense.chargeStart
+    // Voa para onde a mira aponta AGORA — soltar cedo demais é por conta própria
+    const target = {
+      x: Math.max(-1, Math.min(1, game.aim.x)),
+      y: Math.max(0.08, Math.min(1, game.aim.y)),
+    }
     game.defense.released = true
-    game.defense.power = Math.min(1, heldS / DEFENSE_CHARGE_S)
     game.defense.releaseTime = game.time
-    game.defense.diveDir = Math.sign(game.aimDx) || Math.sign(game.aim.x) || 1
-    hud.setPower(0)
+    game.defense.target = target
+    game.defense.diveTime = diveTravelTime(Math.hypot(target.x - DIVE_START.x, target.y - DIVE_START.y))
+    hud.setShootLabel('Voou!')
     audio.tap()
+    navigator.vibrate?.(15)
   }
 }
 
@@ -340,8 +349,7 @@ function startSession() {
   game.special = null
   game.defense = null
   game.provocation = { nerve: 0, feintUntil: 0 }
-  fx.particles = []
-  fx.floats = []
+  resetFx(fx)
   tilt.reset()
   tilt.setLimitX(game.mode === 'striker' ? AIM_LIMIT_X : 1)
   if (tilt.state.mode === 'tilt') tilt.calibrate()
@@ -378,12 +386,17 @@ function startRound() {
     // Jogador já estava segurando desde o outcome anterior: rearma a carga
     if (actionHeld) game.charge = { start: game.time, notifiedFull: false }
   } else {
-    game.defense = { chargeStart: null, released: false, power: 0, releaseTime: 0, diveDir: 1, notifiedFull: false }
+    game.defense = { holding: false, released: false, releaseTime: 0, target: null, diveTime: 0 }
+    game.aiPlan = aiKickPlan({ round: game.state.round, rngValue: Math.random() })
     game.provocation = { nerve: 0, feintUntil: 0 }
     setPhase('windup')
     hud.setShootEnabled(true)
+    hud.setShootLabel('Defender!')
     setKeeperHint()
-    if (actionHeld) game.defense.chargeStart = game.time
+    if (actionHeld) {
+      game.defense.holding = true
+      hud.setShootLabel('Solte para voar!')
+    }
   }
   hud.updateScore(game.state)
   hud.updateHits(game.state, game.mode)
@@ -400,9 +413,9 @@ function setAimHint() {
 
 function setKeeperHint() {
   const hints = {
-    tilt: 'Incline para posicionar · <b>solte Defender</b> na hora · chacoalhe = finta',
-    touch: 'Arraste para posicionar · <b>solte Defender</b> na hora · 2 toques = finta',
-    teclado: '<b>← → ↑ ↓</b> posicionam · <b>espaço</b> = impulso · <b>X</b> = finta',
+    tilt: 'Incline a mira no canto · <b>solte para voar</b> até ela · chacoalhe = finta',
+    touch: 'Arraste a mira · segure e <b>solte para voar</b> até ela · 2 toques = finta',
+    teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> segura, soltar = voo · <b>X</b> = finta',
   }
   hud.setHint(hints[tilt.state.mode] ?? hints.touch)
 }
@@ -521,34 +534,45 @@ function launchAiShot() {
     rngY: Math.random(),
     nerveMiss,
     rngMiss: Math.random(),
+    rngPower: Math.random(),
   })
   game.shot = { ...shotInfo, from: { x: g.spotX, y: g.spotY } }
-  audio.kick(0.8)
+  game.kickTime = game.time
+  // Bolão sai com som mais seco; bola colocada, mais macio
+  audio.kick(1.3 - shotInfo.duration)
   setPhase('flight')
 }
 
 function endKeeperFlight() {
   const { shot, defense } = game
-  const keeperX = Math.max(-KEEPER_CLAMP, Math.min(KEEPER_CLAMP, game.aim.x))
-  const keeperY = 0.2 + Math.max(0, Math.min(1, game.aim.y)) * 0.55
-  const reachMult = diveReachMult({
+  const result = resolveKeeperDefense({
     released: defense.released,
-    power: defense.power,
-    elapsed: defense.released ? game.time - defense.releaseTime : 0,
+    // Instante determinístico do cruzamento (sem o overshoot do frame)
+    releaseLead: defense.released ? game.kickTime + shot.duration - defense.releaseTime : 0,
+    target: defense.target ?? undefined,
+    shot: { x: shot.x, y: shot.y },
+    shotDuration: shot.duration,
   })
   const rivalMissed = Math.abs(shot.x) > 1 || shot.y > 1
-  const saved = !rivalMissed && resolveSave2D({ x: keeperX, y: keeperY }, { x: shot.x, y: shot.y }, reachMult)
+  const saved = result.saved
+  const boughtFeint =
+    Boolean(game.aiPlan?.feint) && !saved && !rivalMissed && defense.released && defense.releaseTime < game.kickTime
   const success = saved || rivalMissed
-  const points = saved ? savePoints2D({ x: shot.x, y: shot.y }) : rivalMissed ? PROVOKE_MISS_POINTS : 0
+  const perfect = saved && result.phase === 'stretched'
+  const points = saved
+    ? savePoints2D({ x: shot.x, y: shot.y }) + (perfect ? 25 : 0)
+    : rivalMissed
+      ? PROVOKE_MISS_POINTS
+      : 0
   const gained = success ? points * game.state.combo : 0
   const prevCombo = game.state.combo
   game.state = applyResult(game.state, { success, points })
   game.shot.saved = saved
   game.shot.rivalMissed = rivalMissed
-  game.shot.keeperXAtCross = keeperX
+  game.shot.defenseResult = result
 
   if (saved) {
-    hud.flash('Defendeu!', 'save')
+    hud.flash(perfect ? 'Defesaça!' : 'Defendeu!', 'save')
     if (!reducedMotion) {
       burst(fx, g.gx(shot.x), g.gy(shot.y), 'save')
       shake(fx, 6)
@@ -556,14 +580,21 @@ function endKeeperFlight() {
     }
     audio.save()
     if (game.state.combo > prevCombo) audio.comboUp(game.state.combo)
-    navigator.vibrate?.(40)
+    navigator.vibrate?.(perfect ? [30, 40, 60] : 40)
   } else if (rivalMissed) {
     hud.flash('Isolou!', 'save')
     if (!reducedMotion) floatText(fx, `+${gained}`, g.gx(0), g.gy(0.8), '167, 139, 250')
     audio.whistle()
     if (game.state.combo > prevCombo) audio.comboUp(game.state.combo)
   } else {
-    hud.flash('Gol sofrido', 'miss')
+    // Conta o que aconteceu: plantado, tarde, canto errado ou cedo demais
+    const phaseMsg = {
+      standing: 'Ficou plantado!',
+      diving: 'Pulou tarde!',
+      stretched: 'Canto errado!',
+      grounded: 'Pulou cedo!',
+    }
+    hud.flash(boughtFeint ? 'Comprou a finta!' : (phaseMsg[result.phase] ?? 'Gol sofrido'), 'miss')
     if (!reducedMotion) ripple(fx)
     audio.miss()
     navigator.vibrate?.([24, 40, 24])
@@ -676,14 +707,6 @@ function updateGame(dt) {
       audio.tap()
       navigator.vibrate?.(20)
     }
-  } else if (game.defense && game.defense.chargeStart !== null && !game.defense.released) {
-    const power = Math.min(1, (game.time - game.defense.chargeStart) / DEFENSE_CHARGE_S)
-    hud.setPower(power)
-    if (power >= 1 && !game.defense.notifiedFull) {
-      game.defense.notifiedFull = true
-      audio.tap()
-      navigator.vibrate?.(20)
-    }
   }
 
   game.phaseT += dt
@@ -693,7 +716,7 @@ function updateGame(dt) {
     else if (game.phase === 'flight' && game.phaseT >= game.shot.flightDur) endStrikerFlight()
     else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) nextRoundOrFinish()
   } else if (game.mode === 'keeper') {
-    if (game.phase === 'windup' && game.phaseT >= WINDUP_S) launchAiShot()
+    if (game.phase === 'windup' && game.phaseT >= (game.aiPlan?.windup ?? WINDUP_S)) launchAiShot()
     else if (game.phase === 'flight' && game.phaseT >= game.shot.duration) endKeeperFlight()
     else if (game.phase === 'outcome' && game.phaseT >= OUTCOME_S) nextRoundOrFinish()
   }

@@ -135,7 +135,9 @@ export const COACH_TIPS = [
   'Segure o botão para dar força. Toque curtinho é cavadinha: humilha goleiro que pulou!',
   'Chacoalhe o celular antes de bater para armar um golpe especial.',
   'No modo goleiro, chacoalhe durante a corrida do rival para deixá-lo nervoso.',
-  'No modo goleiro, segure Defender e solte na hora do chute: sem o impulso o alcance é curto.',
+  'No modo goleiro, o mergulho leva tempo: para canto longe, solte um tiquinho antes.',
+  'O rival adora uma paradinha: se você voar antes do chute, já era. Segure o nervo!',
+  'Bola fraca dá tempo de encaixar a defesa; bolão exige mergulho no ponto exato.',
   'Chute no máximo de força sai um foguete, mas fica mais difícil de colocar no canto.',
   'Sequência de acertos multiplica os pontos: proteja seu combo!',
 ]
