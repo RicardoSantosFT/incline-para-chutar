@@ -2,6 +2,10 @@
 
 Minigame mobile-first de pênaltis controlado pelo **acelerômetro/giroscópio**: incline o celular para mirar o chute — ou para defender como goleiro. Visual no estilo do app Radar FC (navy escuro + verde neon + roxo), fiel à tela de referência "Incline para Chutar".
 
+**🎮 Jogar no celular (giroscópio funciona):** https://ricardosantosft.github.io/incline-para-chutar/
+
+> Importante: abra no **Safari/Chrome direto** (não em navegador embutido de app). Versões embutidas em iframe — como o visualizador de artifacts do claude.ai — não recebem permissão de sensores no iOS e caem no modo toque.
+
 ## Como jogar
 
 | Modo | Objetivo | Controle |
