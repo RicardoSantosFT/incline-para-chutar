@@ -19,6 +19,7 @@ import { renderStriker, renderKeeperMode } from './render/composer.js'
 import { initSprites } from './render/sprites.js'
 import { createFx, resetFx, burst, floatText, shake, ripple, updateFx, shakeOffset, drawFx } from './render/fx.js'
 import { createHud, COACH_TIPS } from './ui/hud.js'
+import { initMascotVideo } from './ui/chroma.js'
 import { store, STORAGE } from './ui/store.js'
 import { showPermissionBlocked } from './ui/permission.js'
 import { createAudio } from './audio.js'
@@ -38,6 +39,7 @@ const audio = createAudio()
 const tilt = createTiltInput()
 const fx = createFx()
 initSprites()
+initMascotVideo()
 
 const canvas = document.getElementById('scene')
 const ctx = canvas.getContext('2d')
@@ -188,9 +190,7 @@ document.getElementById('btn-mute').addEventListener('click', (event) => {
 })
 
 // ---------- Botão de ação (segurar/soltar) ----------
-// A carga pertence ao ponteiro que apertou o botão (pointer capture):
-// o dedo que arrasta a mira na cena não solta o chute/mergulho por engano.
-// actionHeld deixa "segurar atravessando a troca de fase" funcionar.
+// A carga pertence ao ponteiro que apertou (capture); actionHeld preserva o hold entre fases.
 let actionPointerId = null
 let actionHeld = false
 let actionKeyHeld = false
@@ -202,18 +202,14 @@ hud.nodes.shootBtn.addEventListener('pointerdown', (event) => {
   actionHeld = true
   onActionPress()
 })
-hud.nodes.shootBtn.addEventListener('pointerup', (event) => {
+const onActionPointerEnd = (event) => {
   if (event.pointerId !== actionPointerId) return
   actionPointerId = null
   actionHeld = false
   onActionRelease()
-})
-hud.nodes.shootBtn.addEventListener('pointercancel', (event) => {
-  if (event.pointerId !== actionPointerId) return
-  actionPointerId = null
-  actionHeld = false
-  onActionRelease()
-})
+}
+hud.nodes.shootBtn.addEventListener('pointerup', onActionPointerEnd)
+hud.nodes.shootBtn.addEventListener('pointercancel', onActionPointerEnd)
 hud.nodes.shootBtn.addEventListener('contextmenu', (event) => event.preventDefault())
 
 window.addEventListener('keydown', (event) => {

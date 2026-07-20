@@ -32,11 +32,17 @@
   font-weight: 900;
   text-shadow: 0 3px 24px rgba(88, 255, 70, 0.45);
 }
-.menu-mascot {
-  width: 100%; height: auto;
+.menu-mascot { width: 100%; }
+.menu-mascot img {
+  width: 100%; height: auto; display: block;
   filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.55));
   transform: scaleX(-1);
 }
+.menu-mascot canvas {
+  width: 100%; height: auto; display: block;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.55));
+}
+.menu-mascot canvas[hidden], .menu-mascot img[hidden] { display: none; }
 .menu-sub { color: #c9d4ea; font-size: 15px; margin-top: 2px; }
 .menu-sub b { color: var(--green); }
 

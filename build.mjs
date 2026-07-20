@@ -47,6 +47,7 @@ const MODULES = [
   'src/render/fx.js',
   'src/render/composer.js',
   'src/ui/hud.js',
+  'src/ui/chroma.js',
   'src/ui/store.js',
   'src/ui/permission.js',
   'src/audio.js',
