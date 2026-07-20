@@ -26,3 +26,4 @@ export const RUNUP_S = 0.34
 export const PARADINHA_RUNUP_S = 1.05
 export const WINDUP_S = 1.0
 export const OUTCOME_S = 1.35
+export const DEFENSE_CHARGE_S = 1.0 // tempo para encher a força do pulo do goleiro

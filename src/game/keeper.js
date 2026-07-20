@@ -1,4 +1,4 @@
-import { KEEPER_REACH_X, KEEPER_REACH_Y, CORNER_BONUS, HIGH_SAVE_BONUS } from './constants.js'
+import { KEEPER_REACH_X, KEEPER_REACH_Y } from './constants.js'
 
 // Modo goleiro: o rival chuta; o jogador MIRA um alvo (como o batedor),
 // segura o botão e voa para o alvo no instante em que solta. A física do
@@ -10,7 +10,6 @@ const BASE_DURATION_S = 0.68
 const DURATION_STEP_S = 0.035
 const MIN_DURATION_S = 0.42
 const MIN_AI_DURATION_S = 0.36
-const CORNER_THRESHOLD = 0.65
 
 // Física do mergulho
 export const DIVE_START = { x: 0, y: 0.35 } // goleiro parado no centro
@@ -61,41 +60,77 @@ export function diveTravelTime(distance) {
   return DIVE_MIN_TIME_S + distance * DIVE_TIME_PER_DIST_S
 }
 
+// Física do impulso: a força precisa casar com a distância do alvo.
+// Pouca força → cai no meio do caminho; força demais → passa direto do ponto.
+export const MAX_DIVE_DIST = 1.25
+const OVERSHOOT_SCALE = 0.7
+
+export function divePlan({ target = DIVE_START, power }) {
+  const dx = target.x - DIVE_START.x
+  const dy = target.y - DIVE_START.y
+  const dist = Math.hypot(dx, dy)
+  const needed = Math.min(1, dist / MAX_DIVE_DIST)
+  const p = power ?? needed // sem power informado: força exata (IA/compatibilidade)
+  let point
+  let short = false
+  if (p >= needed || dist === 0) {
+    const excess = (p - needed) * OVERSHOOT_SCALE * MAX_DIVE_DIST
+    const ux = dist > 0 ? dx / dist : 0
+    const uy = dist > 0 ? dy / dist : 0
+    point = {
+      x: Math.max(-1.05, Math.min(1.05, target.x + ux * excess)),
+      y: Math.max(0.08, Math.min(1, target.y + uy * excess)),
+    }
+  } else {
+    short = true
+    const f = p / needed
+    point = { x: DIVE_START.x + dx * f, y: DIVE_START.y + dy * f }
+  }
+  const travel = Math.hypot(point.x - DIVE_START.x, point.y - DIVE_START.y)
+  return { point, dist, needed, short, travel, diveTime: diveTravelTime(travel) }
+}
+
 // Bola fraca dá tempo de encaixar; bolão exige estar em cima.
 export function catchSpeedMult(shotDurationS) {
   return Math.max(0.75, Math.min(1.15, 0.75 + (shotDurationS - 0.42) * 0.9))
 }
 
 // Onde o goleiro está (e em que fase) quando a bola cruza a linha.
-// releaseLead = segundos entre soltar o botão e a bola cruzar.
-function keeperStateAtCross({ released, releaseLead, target }) {
+// releaseLead = segundos entre soltar e a bola cruzar; o voo segue o divePlan
+// (força × distância), não o alvo cru.
+function keeperStateAtCross({ released, releaseLead, target, power }) {
   if (!released || releaseLead <= 0) {
-    return { pos: { ...DIVE_START }, phase: 'standing', mult: STANDING_MULT }
+    return { pos: { ...DIVE_START }, phase: 'standing', mult: STANDING_MULT, plan: null }
   }
-  const dist = Math.hypot(target.x - DIVE_START.x, target.y - DIVE_START.y)
-  const diveTime = diveTravelTime(dist)
-  if (releaseLead <= diveTime) {
-    const f = releaseLead / diveTime
+  const plan = divePlan({ target, power })
+  if (releaseLead <= plan.diveTime) {
+    const f = releaseLead / plan.diveTime
     return {
       pos: {
-        x: DIVE_START.x + (target.x - DIVE_START.x) * f,
-        y: DIVE_START.y + (target.y - DIVE_START.y) * f,
+        x: DIVE_START.x + (plan.point.x - DIVE_START.x) * f,
+        y: DIVE_START.y + (plan.point.y - DIVE_START.y) * f,
       },
       phase: 'diving',
       mult: DIVING_MULT,
+      plan,
     }
   }
-  if (releaseLead <= diveTime + STRETCH_WINDOW_S) {
-    const stretched = dist >= MIN_STRETCH_DIST
-    return { pos: { ...target }, phase: stretched ? 'stretched' : 'diving', mult: stretched ? STRETCHED_MULT : DIVING_MULT }
+  if (releaseLead <= plan.diveTime + STRETCH_WINDOW_S) {
+    const stretched = plan.travel >= MIN_STRETCH_DIST
+    return {
+      pos: { ...plan.point },
+      phase: stretched ? 'stretched' : 'diving',
+      mult: stretched ? STRETCHED_MULT : DIVING_MULT,
+      plan,
+    }
   }
-  return { pos: { ...target }, phase: 'grounded', mult: GROUNDED_MULT }
+  return { pos: { ...plan.point }, phase: 'grounded', mult: GROUNDED_MULT, plan }
 }
 
 // Resolve a defesa: posição do goleiro no cruzamento × alcance elíptico
 // escalado pela fase do mergulho e pela velocidade da bola.
-export function resolveKeeperDefense({ released, releaseLead = 0, target = DIVE_START, shot, shotDuration: durationS }) {
-  const state = keeperStateAtCross({ released, releaseLead, target })
+export function resolveKeeperDefense({ released, releaseLead = 0, target = DIVE_START, power, shot, shotDuration: durationS }) {
+  const state = keeperStateAtCross({ released, releaseLead, target, power })
   const speedMult = catchSpeedMult(durationS)
   const rx = KEEPER_REACH_X * state.mult * speedMult
   const ry = KEEPER_REACH_Y * state.mult * speedMult
@@ -103,9 +138,7 @@ export function resolveKeeperDefense({ released, releaseLead = 0, target = DIVE_
   const dx = state.pos.x - shot.x
   const dy = state.pos.y - shot.y
   const saved = !offTarget && (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1
-  return { saved, phase: state.phase, keeperAt: state.pos, rx, ry }
+  return { saved, phase: state.phase, keeperAt: state.pos, rx, ry, plan: state.plan }
 }
 
-export function savePoints2D({ x, y }) {
-  return 100 + (Math.abs(x) >= CORNER_THRESHOLD ? CORNER_BONUS : 0) + (y >= 0.6 ? HIGH_SAVE_BONUS : 0)
-}
+

@@ -153,9 +153,20 @@ export function createTiltInput() {
     element.addEventListener('pointercancel', onPointerEnd)
   }
   // Rastreia o dedo que mira NA CENA (pode ser o segundo dedo do toque,
-  // com o primeiro segurando o botão de ação fora da cena)
+  // com o primeiro segurando o botão de ação fora da cena).
+  // No modo goleiro com sensor, o arrasto é DESLIGADO: a tela inteira vira
+  // o botão de defesa e só a inclinação mira.
   let dragPointerId = null
+  let dragEnabled = true
+  function setDragEnabled(enabled) {
+    dragEnabled = enabled
+    if (!enabled) {
+      dragPointerId = null
+      state.dragging = false
+    }
+  }
   function onPointer(event) {
+    if (!dragEnabled) return
     if (event.type === 'pointerdown') {
       if (dragPointerId !== null) return // já existe um dedo mirando
       dragPointerId = event.pointerId
@@ -249,6 +260,7 @@ export function createTiltInput() {
     calibrate,
     reset,
     setLimitX,
+    setDragEnabled,
     onShake,
     attachDragArea,
     readAim,

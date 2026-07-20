@@ -1,5 +1,5 @@
-import { AIM_LIMIT_X, AIM_LIMIT_Y, WINDUP_S } from '../game/constants.js'
-import { STRETCH_WINDOW_S } from '../game/keeper.js'
+import { AIM_LIMIT_X, AIM_LIMIT_Y, WINDUP_S, DEFENSE_CHARGE_S } from '../game/constants.js'
+import { STRETCH_WINDOW_S, divePlan } from '../game/keeper.js'
 import { drawBall, drawTrail, drawKeeper, drawStriker, drawReticle } from './actors.js'
 
 // Composição das cenas dos dois modos. Recebe o estado do jogo e desenha;
@@ -119,19 +119,21 @@ export function renderKeeperMode(ctx, g, game) {
   const { phase, phaseT, shot, defense, aiPlan } = game
   const dt = game.frameDt ?? 0.016
 
-  // Goleiro: parado no centro escolhendo o alvo; ao soltar, voa até ele
+  // Goleiro: parado no centro escolhendo o alvo; ao soltar, voa até onde a
+  // FORÇA carregada leva (plano do impulso), não até a mira crua
   let pose
+  const charging = defense?.holding && !defense.released
+  const chargePower = charging ? Math.min(1, (game.time - defense.chargeStart) / DEFENSE_CHARGE_S) : 0
   if (defense?.released) {
     const elapsed = game.time - defense.releaseTime
     const f = Math.min(1, elapsed / Math.max(0.01, defense.diveTime))
-    const tx = defense.target.x
-    const dir = Math.abs(tx) < 0.18 ? 0 : Math.sign(tx)
-    const x = g.gx(0) + (g.gx(tx) - g.gx(0)) * f
+    const flyTo = defense.plan?.point ?? defense.target
+    const dir = Math.abs(flyTo.x) < 0.18 ? 0 : Math.sign(flyTo.x)
+    const x = g.gx(0) + (g.gx(flyTo.x) - g.gx(0)) * f
     // Caído no mesmo instante em que a física vira 'grounded'
     const grounded = elapsed > defense.diveTime + STRETCH_WINDOW_S
-    // Altura do voo acompanha a lógica: interpola até a altura do alvo
-    const keeperY = grounded ? 0.35 : 0.35 + (defense.target.y - 0.35) * f
-    pose = { x, diveDir: dir, diveT: f, reachY: defense.target.y, keeperY, grounded, sway: game.time }
+    const keeperY = grounded ? 0.35 : 0.35 + (flyTo.y - 0.35) * f
+    pose = { x, diveDir: dir, diveT: f, reachY: flyTo.y, keeperY, grounded, sway: game.time }
   } else {
     const feint = game.time < game.provocation.feintUntil ? 1 : 0
     pose = {
@@ -140,7 +142,7 @@ export function renderKeeperMode(ctx, g, game) {
       diveT: 0,
       sway: game.time,
       reachY: 0.35,
-      crouch: defense?.holding ? 0.55 : 0,
+      crouch: charging ? 0.3 + chargePower * 0.55 : 0,
       feint,
     }
   }
@@ -167,11 +169,7 @@ export function renderKeeperMode(ctx, g, game) {
     drawKeeper(ctx, g, pose, 'player')
     drawStriker(ctx, g, { progress: 1, kicking: true, palette: 'rival' })
     // Retícula atrás da bola: escurecer a bola no instante da decisão atrapalha
-    if (showReticle) {
-      const rx = Math.max(-1, Math.min(1, game.aim.x))
-      const ry = Math.max(0.08, Math.min(1, game.aim.y))
-      drawReticle(ctx, g, { x: g.gx(rx), y: g.gy(ry), stability: game.stability, time: game.time })
-    }
+    if (showReticle) drawKeeperReticle(ctx, g, game, charging, chargePower)
     const t = Math.min(1, phaseT / shot.duration)
     const pos = ballFlightPos(g, t, shot.x, shot.y, {})
     game.spin += 20.4 * dt
@@ -203,9 +201,18 @@ export function renderKeeperMode(ctx, g, game) {
     drawStriker(ctx, g, { progress: 1, kicking: false, palette: 'rival' })
   }
 
-  if (showReticle && phase === 'windup') {
-    const rx = Math.max(-1, Math.min(1, game.aim.x))
-    const ry = Math.max(0.08, Math.min(1, game.aim.y))
-    drawReticle(ctx, g, { x: g.gx(rx), y: g.gy(ry), stability: game.stability, time: game.time })
+  if (showReticle && phase === 'windup') drawKeeperReticle(ctx, g, game, charging, chargePower)
+}
+
+// Retícula do goleiro: enquanto carrega, o arco fecha quando a FORÇA casa
+// com a distância da mira (indicador do ponto certo de soltar)
+function drawKeeperReticle(ctx, g, game, charging, chargePower) {
+  const rx = Math.max(-1, Math.min(1, game.aim.x))
+  const ry = Math.max(0.08, Math.min(1, game.aim.y))
+  let indicator = game.stability
+  if (charging) {
+    const needed = divePlan({ target: { x: rx, y: ry } }).needed
+    indicator = 1 - Math.min(1, Math.abs(chargePower - needed) / 0.3)
   }
+  drawReticle(ctx, g, { x: g.gx(rx), y: g.gy(ry), stability: indicator, time: game.time })
 }

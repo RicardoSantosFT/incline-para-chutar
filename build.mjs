@@ -41,6 +41,7 @@ const MODULES = [
   'src/net/transport.js',
   'src/net/controller.js',
   'src/input/tilt.js',
+  'src/input/actions.js',
   'src/render/scene.js',
   'src/render/sprites.js',
   'src/render/actors.js',

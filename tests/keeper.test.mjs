@@ -4,13 +4,12 @@ import {
   aiShot2D,
   aiKickPlan,
   shotDuration,
-  savePoints2D,
   diveTravelTime,
   catchSpeedMult,
+  divePlan,
   resolveKeeperDefense,
   DIVE_START,
 } from '../src/game/keeper.js'
-import { CORNER_BONUS } from '../src/game/constants.js'
 
 // ---------- chute do rival ----------
 
@@ -152,10 +151,88 @@ test('bola fora continua fora mesmo com goleiro em cima', () => {
   assert.equal(r.saved, false)
 })
 
-// ---------- pontuação ----------
 
-test('savePoints2D premia canto e bola alta', () => {
-  assert.equal(savePoints2D({ x: 0.2, y: 0.3 }), 100)
-  assert.equal(savePoints2D({ x: 0.8, y: 0.3 }), 100 + CORNER_BONUS)
-  assert.equal(savePoints2D({ x: 0.8, y: 0.8 }), 100 + CORNER_BONUS + 25)
+// ---------- força do pulo ----------
+
+test('divePlan: força na medida chega exatamente no alvo', () => {
+  const target = { x: 0.9, y: 0.7 }
+  const exact = divePlan({ target, power: divePlan({ target, power: 1 }).needed })
+  assert.ok(Math.abs(exact.point.x - target.x) < 1e-9)
+  assert.ok(Math.abs(exact.point.y - target.y) < 1e-9)
+  assert.equal(exact.short, false)
+})
+
+test('divePlan: pouca força cai no meio do caminho', () => {
+  const target = { x: 0.9, y: 0.7 }
+  const weak = divePlan({ target, power: 0.3 })
+  assert.equal(weak.short, true)
+  assert.ok(Math.abs(weak.point.x) < Math.abs(target.x), 'não chega no canto')
+  assert.ok(weak.point.x > 0, 'mas voa na direção certa')
+})
+
+test('divePlan: força demais passa do alvo (overshoot)', () => {
+  const target = { x: 0.25, y: 0.4 } // alvo perto exige pouco impulso
+  const over = divePlan({ target, power: 1 })
+  assert.equal(over.short, false)
+  assert.ok(over.point.x > target.x + 0.1, 'passa direto do ponto')
+})
+
+test('divePlan: tempo de voo cresce com a distância real percorrida', () => {
+  const far = divePlan({ target: { x: 0.9, y: 0.7 }, power: 1 })
+  const near = divePlan({ target: { x: 0.9, y: 0.7 }, power: 0.3 })
+  assert.ok(near.diveTime < far.diveTime)
+})
+
+test('defesa com força certa e timing certo segura o chute no canto', () => {
+  const target = { x: 0.9, y: 0.7 }
+  const needed = divePlan({ target, power: 1 }).needed
+  const plan = divePlan({ target, power: needed })
+  const r = resolveKeeperDefense({
+    released: true,
+    releaseLead: plan.diveTime + 0.1,
+    target,
+    power: needed,
+    shot: { x: 0.9, y: 0.7 },
+    shotDuration: 0.7,
+  })
+  assert.equal(r.saved, true)
+  assert.equal(r.phase, 'stretched')
+})
+
+test('sem força suficiente a bola no canto passa por cima do goleiro caído no caminho', () => {
+  const target = { x: 0.9, y: 0.7 }
+  const r = resolveKeeperDefense({
+    released: true,
+    releaseLead: 0.6,
+    target,
+    power: 0.25,
+    shot: { x: 0.9, y: 0.7 },
+    shotDuration: 0.45,
+  })
+  assert.equal(r.saved, false)
+})
+
+test('força demais em alvo perto: o goleiro passa direto pela bola', () => {
+  const target = { x: 0.2, y: 0.35 }
+  const plan = divePlan({ target, power: 1 })
+  const r = resolveKeeperDefense({
+    released: true,
+    releaseLead: plan.diveTime + 0.05,
+    target,
+    power: 1,
+    shot: { x: 0.2, y: 0.35 },
+    shotDuration: 0.42,
+  })
+  assert.equal(r.saved, false, 'overshoot leva o goleiro para longe da bola')
+})
+
+test('sem power informado o plano assume força exata (compatibilidade)', () => {
+  const r = resolveKeeperDefense({
+    released: true,
+    releaseLead: 0.55,
+    target: { x: 0.9, y: 0.7 },
+    shot: { x: 0.9, y: 0.7 },
+    shotDuration: 0.85,
+  })
+  assert.equal(r.saved, true)
 })

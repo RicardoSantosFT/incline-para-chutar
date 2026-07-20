@@ -207,7 +207,7 @@ export function createDuelController(ctx) {
       // Goleiro espera o chute real — nada de rival automático
       game.aiPlan = { feint: false, windup: Infinity }
       hud.flash('Defenda!', 'save')
-      hud.setHint('O rival prepara o chute… mire o canto e <b>solte para voar</b>')
+      hud.setHint('O rival prepara… <b>segure a tela</b>, incline a mira e <b>solte</b> = voo')
       applyPendingKick()
     }
     updateBoard()

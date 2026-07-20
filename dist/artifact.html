@@ -1075,6 +1075,7 @@ const RUNUP_S = 0.34
 const PARADINHA_RUNUP_S = 1.05
 const WINDUP_S = 1.0
 const OUTCOME_S = 1.35
+const DEFENSE_CHARGE_S = 1.0 // tempo para encher a força do pulo do goleiro
 
 // Converte o ângulo gamma do sensor (graus) em mira horizontal, relativa à
 // posição calibrada. `limit` acima de 1 deixa a mira passar da trave
@@ -1349,7 +1350,6 @@ const BASE_DURATION_S = 0.68
 const DURATION_STEP_S = 0.035
 const MIN_DURATION_S = 0.42
 const MIN_AI_DURATION_S = 0.36
-const CORNER_THRESHOLD = 0.65
 
 // Física do mergulho
 const DIVE_START = { x: 0, y: 0.35 } // goleiro parado no centro
@@ -1400,41 +1400,77 @@ function diveTravelTime(distance) {
   return DIVE_MIN_TIME_S + distance * DIVE_TIME_PER_DIST_S
 }
 
+// Física do impulso: a força precisa casar com a distância do alvo.
+// Pouca força → cai no meio do caminho; força demais → passa direto do ponto.
+const MAX_DIVE_DIST = 1.25
+const OVERSHOOT_SCALE = 0.7
+
+function divePlan({ target = DIVE_START, power }) {
+  const dx = target.x - DIVE_START.x
+  const dy = target.y - DIVE_START.y
+  const dist = Math.hypot(dx, dy)
+  const needed = Math.min(1, dist / MAX_DIVE_DIST)
+  const p = power ?? needed // sem power informado: força exata (IA/compatibilidade)
+  let point
+  let short = false
+  if (p >= needed || dist === 0) {
+    const excess = (p - needed) * OVERSHOOT_SCALE * MAX_DIVE_DIST
+    const ux = dist > 0 ? dx / dist : 0
+    const uy = dist > 0 ? dy / dist : 0
+    point = {
+      x: Math.max(-1.05, Math.min(1.05, target.x + ux * excess)),
+      y: Math.max(0.08, Math.min(1, target.y + uy * excess)),
+    }
+  } else {
+    short = true
+    const f = p / needed
+    point = { x: DIVE_START.x + dx * f, y: DIVE_START.y + dy * f }
+  }
+  const travel = Math.hypot(point.x - DIVE_START.x, point.y - DIVE_START.y)
+  return { point, dist, needed, short, travel, diveTime: diveTravelTime(travel) }
+}
+
 // Bola fraca dá tempo de encaixar; bolão exige estar em cima.
 function catchSpeedMult(shotDurationS) {
   return Math.max(0.75, Math.min(1.15, 0.75 + (shotDurationS - 0.42) * 0.9))
 }
 
 // Onde o goleiro está (e em que fase) quando a bola cruza a linha.
-// releaseLead = segundos entre soltar o botão e a bola cruzar.
-function keeperStateAtCross({ released, releaseLead, target }) {
+// releaseLead = segundos entre soltar e a bola cruzar; o voo segue o divePlan
+// (força × distância), não o alvo cru.
+function keeperStateAtCross({ released, releaseLead, target, power }) {
   if (!released || releaseLead <= 0) {
-    return { pos: { ...DIVE_START }, phase: 'standing', mult: STANDING_MULT }
+    return { pos: { ...DIVE_START }, phase: 'standing', mult: STANDING_MULT, plan: null }
   }
-  const dist = Math.hypot(target.x - DIVE_START.x, target.y - DIVE_START.y)
-  const diveTime = diveTravelTime(dist)
-  if (releaseLead <= diveTime) {
-    const f = releaseLead / diveTime
+  const plan = divePlan({ target, power })
+  if (releaseLead <= plan.diveTime) {
+    const f = releaseLead / plan.diveTime
     return {
       pos: {
-        x: DIVE_START.x + (target.x - DIVE_START.x) * f,
-        y: DIVE_START.y + (target.y - DIVE_START.y) * f,
+        x: DIVE_START.x + (plan.point.x - DIVE_START.x) * f,
+        y: DIVE_START.y + (plan.point.y - DIVE_START.y) * f,
       },
       phase: 'diving',
       mult: DIVING_MULT,
+      plan,
     }
   }
-  if (releaseLead <= diveTime + STRETCH_WINDOW_S) {
-    const stretched = dist >= MIN_STRETCH_DIST
-    return { pos: { ...target }, phase: stretched ? 'stretched' : 'diving', mult: stretched ? STRETCHED_MULT : DIVING_MULT }
+  if (releaseLead <= plan.diveTime + STRETCH_WINDOW_S) {
+    const stretched = plan.travel >= MIN_STRETCH_DIST
+    return {
+      pos: { ...plan.point },
+      phase: stretched ? 'stretched' : 'diving',
+      mult: stretched ? STRETCHED_MULT : DIVING_MULT,
+      plan,
+    }
   }
-  return { pos: { ...target }, phase: 'grounded', mult: GROUNDED_MULT }
+  return { pos: { ...plan.point }, phase: 'grounded', mult: GROUNDED_MULT, plan }
 }
 
 // Resolve a defesa: posição do goleiro no cruzamento × alcance elíptico
 // escalado pela fase do mergulho e pela velocidade da bola.
-function resolveKeeperDefense({ released, releaseLead = 0, target = DIVE_START, shot, shotDuration: durationS }) {
-  const state = keeperStateAtCross({ released, releaseLead, target })
+function resolveKeeperDefense({ released, releaseLead = 0, target = DIVE_START, power, shot, shotDuration: durationS }) {
+  const state = keeperStateAtCross({ released, releaseLead, target, power })
   const speedMult = catchSpeedMult(durationS)
   const rx = KEEPER_REACH_X * state.mult * speedMult
   const ry = KEEPER_REACH_Y * state.mult * speedMult
@@ -1442,12 +1478,10 @@ function resolveKeeperDefense({ released, releaseLead = 0, target = DIVE_START, 
   const dx = state.pos.x - shot.x
   const dy = state.pos.y - shot.y
   const saved = !offTarget && (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1
-  return { saved, phase: state.phase, keeperAt: state.pos, rx, ry }
+  return { saved, phase: state.phase, keeperAt: state.pos, rx, ry, plan: state.plan }
 }
 
-function savePoints2D({ x, y }) {
-  return 100 + (Math.abs(x) >= CORNER_THRESHOLD ? CORNER_BONUS : 0) + (y >= 0.6 ? HIGH_SAVE_BONUS : 0)
-}
+
 
 function initialScore(best = 0) {
   return { score: 0, combo: 1, maxCombo: 1, hits: 0, round: 1, best }
@@ -1991,7 +2025,7 @@ function createDuelController(ctx) {
       // Goleiro espera o chute real — nada de rival automático
       game.aiPlan = { feint: false, windup: Infinity }
       hud.flash('Defenda!', 'save')
-      hud.setHint('O rival prepara o chute… mire o canto e <b>solte para voar</b>')
+      hud.setHint('O rival prepara… <b>segure a tela</b>, incline a mira e <b>solte</b> = voo')
       applyPendingKick()
     }
     updateBoard()
@@ -2400,9 +2434,20 @@ function createTiltInput() {
     element.addEventListener('pointercancel', onPointerEnd)
   }
   // Rastreia o dedo que mira NA CENA (pode ser o segundo dedo do toque,
-  // com o primeiro segurando o botão de ação fora da cena)
+  // com o primeiro segurando o botão de ação fora da cena).
+  // No modo goleiro com sensor, o arrasto é DESLIGADO: a tela inteira vira
+  // o botão de defesa e só a inclinação mira.
   let dragPointerId = null
+  let dragEnabled = true
+  function setDragEnabled(enabled) {
+    dragEnabled = enabled
+    if (!enabled) {
+      dragPointerId = null
+      state.dragging = false
+    }
+  }
   function onPointer(event) {
+    if (!dragEnabled) return
     if (event.type === 'pointerdown') {
       if (dragPointerId !== null) return // já existe um dedo mirando
       dragPointerId = event.pointerId
@@ -2496,10 +2541,140 @@ function createTiltInput() {
     calibrate,
     reset,
     setLimitX,
+    setDragEnabled,
     onShake,
     attachDragArea,
     readAim,
     destroy,
+  }
+}
+
+// Entrada do botão de ação (segurar/soltar) nas três superfícies:
+// botão físico, barra de espaço/Enter e — no modo goleiro com sensor —
+// QUALQUER lugar da tela (o jogador segura a tela, mira inclinando e solta
+// para voar). A carga pertence ao ponteiro que apertou (pointer capture).
+const QUICK_TAP_CANCEL_S = 0.12 // toque acidental na tela não desperdiça o voo
+
+function initActionInput({ game, hud, audio, tilt, shoot }) {
+  let actionPointerId = null
+  let actionHeld = false
+  let actionKeyHeld = false
+  let screenHoldId = null
+
+  function onActionPress() {
+    if (game.mode === 'striker' && game.phase === 'aim' && !game.charge) {
+      game.charge = { start: game.time, notifiedFull: false }
+      hud.setShootLabel('Solte para chutar!')
+    } else if (game.mode === 'keeper' && (game.phase === 'windup' || game.phase === 'flight')) {
+      if (game.defense && !game.defense.released && !game.defense.holding) {
+        game.defense.holding = true
+        game.defense.chargeStart = game.time
+        hud.setShootLabel('Solte para voar!')
+      }
+    }
+  }
+
+  function onActionRelease() {
+    if (game.mode === 'striker' && game.charge && game.phase === 'aim') {
+      const holdMs = (game.time - game.charge.start) * 1000
+      game.charge = null
+      hud.setPower(0)
+      shoot(holdMs)
+    } else if (
+      game.mode === 'keeper' &&
+      (game.phase === 'windup' || game.phase === 'flight') &&
+      game.defense?.holding &&
+      !game.defense.released
+    ) {
+      const heldS = game.time - game.defense.chargeStart
+      if (heldS < QUICK_TAP_CANCEL_S) {
+        // Encostou sem querer: não desperdiça o mergulho
+        game.defense.holding = false
+        game.defense.chargeStart = null
+        hud.setPower(0)
+        hud.setShootLabel('Defender!')
+        return
+      }
+      // Voa para onde a mira aponta AGORA, com a força carregada
+      const target = {
+        x: Math.max(-1, Math.min(1, game.aim.x)),
+        y: Math.max(0.08, Math.min(1, game.aim.y)),
+      }
+      const power = Math.min(1, heldS / DEFENSE_CHARGE_S)
+      const plan = divePlan({ target, power })
+      game.defense.released = true
+      game.defense.releaseTime = game.time
+      game.defense.target = target
+      game.defense.power = power
+      game.defense.plan = plan
+      game.defense.diveTime = plan.diveTime
+      hud.setPower(0)
+      hud.setShootLabel('Voou!')
+      audio.tap()
+      navigator.vibrate?.(15)
+    }
+  }
+
+  // --- Botão físico (pointer capture) ---
+  hud.nodes.shootBtn.addEventListener('pointerdown', (event) => {
+    event.preventDefault()
+    actionPointerId = event.pointerId
+    hud.nodes.shootBtn.setPointerCapture?.(event.pointerId)
+    actionHeld = true
+    onActionPress()
+  })
+  const onButtonPointerEnd = (event) => {
+    if (event.pointerId !== actionPointerId) return
+    actionPointerId = null
+    actionHeld = false
+    onActionRelease()
+  }
+  hud.nodes.shootBtn.addEventListener('pointerup', onButtonPointerEnd)
+  hud.nodes.shootBtn.addEventListener('pointercancel', onButtonPointerEnd)
+  hud.nodes.shootBtn.addEventListener('contextmenu', (event) => event.preventDefault())
+
+  // --- Goleiro com sensor: segurar em QUALQUER lugar da tela ---
+  hud.nodes.screens.game.addEventListener('pointerdown', (event) => {
+    if (game.mode !== 'keeper' || tilt.state.mode !== 'tilt') return
+    if (event.target.closest('button')) return
+    if (screenHoldId !== null || actionPointerId !== null) return
+    screenHoldId = event.pointerId
+    onActionPress()
+  })
+  const onScreenPointerEnd = (event) => {
+    if (event.pointerId !== screenHoldId) return
+    screenHoldId = null
+    onActionRelease()
+  }
+  window.addEventListener('pointerup', onScreenPointerEnd)
+  window.addEventListener('pointercancel', onScreenPointerEnd)
+
+  // --- Teclado (espaço/Enter) ---
+  window.addEventListener('keydown', (event) => {
+    if (event.key !== ' ' && event.key !== 'Enter') return
+    if (event.repeat) return
+    // Com outro botão focado (voltar, som), deixa a ativação nativa acontecer
+    const focused = document.activeElement
+    if (focused?.tagName === 'BUTTON' && focused !== hud.nodes.shootBtn) return
+    actionHeld = true
+    actionKeyHeld = true
+    if (game.phase === 'aim' || game.phase === 'windup' || game.phase === 'flight') {
+      event.preventDefault()
+      onActionPress()
+    }
+  })
+  window.addEventListener('keyup', (event) => {
+    if (event.key !== ' ' && event.key !== 'Enter') return
+    // keyup solto sem keydown próprio não pode largar um hold do ponteiro
+    if (!actionKeyHeld) return
+    actionKeyHeld = false
+    if (actionPointerId !== null || screenHoldId !== null) return
+    actionHeld = false
+    onActionRelease()
+  })
+
+  return {
+    isHeld: () => actionHeld || screenHoldId !== null,
   }
 }
 
@@ -3511,19 +3686,21 @@ function renderKeeperMode(ctx, g, game) {
   const { phase, phaseT, shot, defense, aiPlan } = game
   const dt = game.frameDt ?? 0.016
 
-  // Goleiro: parado no centro escolhendo o alvo; ao soltar, voa até ele
+  // Goleiro: parado no centro escolhendo o alvo; ao soltar, voa até onde a
+  // FORÇA carregada leva (plano do impulso), não até a mira crua
   let pose
+  const charging = defense?.holding && !defense.released
+  const chargePower = charging ? Math.min(1, (game.time - defense.chargeStart) / DEFENSE_CHARGE_S) : 0
   if (defense?.released) {
     const elapsed = game.time - defense.releaseTime
     const f = Math.min(1, elapsed / Math.max(0.01, defense.diveTime))
-    const tx = defense.target.x
-    const dir = Math.abs(tx) < 0.18 ? 0 : Math.sign(tx)
-    const x = g.gx(0) + (g.gx(tx) - g.gx(0)) * f
+    const flyTo = defense.plan?.point ?? defense.target
+    const dir = Math.abs(flyTo.x) < 0.18 ? 0 : Math.sign(flyTo.x)
+    const x = g.gx(0) + (g.gx(flyTo.x) - g.gx(0)) * f
     // Caído no mesmo instante em que a física vira 'grounded'
     const grounded = elapsed > defense.diveTime + STRETCH_WINDOW_S
-    // Altura do voo acompanha a lógica: interpola até a altura do alvo
-    const keeperY = grounded ? 0.35 : 0.35 + (defense.target.y - 0.35) * f
-    pose = { x, diveDir: dir, diveT: f, reachY: defense.target.y, keeperY, grounded, sway: game.time }
+    const keeperY = grounded ? 0.35 : 0.35 + (flyTo.y - 0.35) * f
+    pose = { x, diveDir: dir, diveT: f, reachY: flyTo.y, keeperY, grounded, sway: game.time }
   } else {
     const feint = game.time < game.provocation.feintUntil ? 1 : 0
     pose = {
@@ -3532,7 +3709,7 @@ function renderKeeperMode(ctx, g, game) {
       diveT: 0,
       sway: game.time,
       reachY: 0.35,
-      crouch: defense?.holding ? 0.55 : 0,
+      crouch: charging ? 0.3 + chargePower * 0.55 : 0,
       feint,
     }
   }
@@ -3559,11 +3736,7 @@ function renderKeeperMode(ctx, g, game) {
     drawKeeper(ctx, g, pose, 'player')
     drawStriker(ctx, g, { progress: 1, kicking: true, palette: 'rival' })
     // Retícula atrás da bola: escurecer a bola no instante da decisão atrapalha
-    if (showReticle) {
-      const rx = Math.max(-1, Math.min(1, game.aim.x))
-      const ry = Math.max(0.08, Math.min(1, game.aim.y))
-      drawReticle(ctx, g, { x: g.gx(rx), y: g.gy(ry), stability: game.stability, time: game.time })
-    }
+    if (showReticle) drawKeeperReticle(ctx, g, game, charging, chargePower)
     const t = Math.min(1, phaseT / shot.duration)
     const pos = ballFlightPos(g, t, shot.x, shot.y, {})
     game.spin += 20.4 * dt
@@ -3595,11 +3768,20 @@ function renderKeeperMode(ctx, g, game) {
     drawStriker(ctx, g, { progress: 1, kicking: false, palette: 'rival' })
   }
 
-  if (showReticle && phase === 'windup') {
-    const rx = Math.max(-1, Math.min(1, game.aim.x))
-    const ry = Math.max(0.08, Math.min(1, game.aim.y))
-    drawReticle(ctx, g, { x: g.gx(rx), y: g.gy(ry), stability: game.stability, time: game.time })
+  if (showReticle && phase === 'windup') drawKeeperReticle(ctx, g, game, charging, chargePower)
+}
+
+// Retícula do goleiro: enquanto carrega, o arco fecha quando a FORÇA casa
+// com a distância da mira (indicador do ponto certo de soltar)
+function drawKeeperReticle(ctx, g, game, charging, chargePower) {
+  const rx = Math.max(-1, Math.min(1, game.aim.x))
+  const ry = Math.max(0.08, Math.min(1, game.aim.y))
+  let indicator = game.stability
+  if (charging) {
+    const needed = divePlan({ target: { x: rx, y: ry } }).needed
+    indicator = 1 - Math.min(1, Math.abs(chargePower - needed) / 0.3)
   }
+  drawReticle(ctx, g, { x: g.gx(rx), y: g.gy(ry), stability: indicator, time: game.time })
 }
 
 // Camada DOM do jogo: placar, combo, mensagens e telas.
@@ -3740,9 +3922,12 @@ const COACH_TIPS = [
   'Segure o botão para dar força. Toque curtinho é cavadinha: humilha goleiro que pulou!',
   'Chacoalhe o celular antes de bater para armar um golpe especial.',
   'No modo goleiro, chacoalhe durante a corrida do rival para deixá-lo nervoso.',
-  'No modo goleiro, o mergulho leva tempo: para canto longe, solte um tiquinho antes.',
+  'No gol, a força do pulo tem que casar com a distância: canto longe pede carga cheia.',
+  'No gol, o arco da retícula fecha quando a força está na medida da mira. Solte ali!',
+  'Força demais em bola perto faz o goleiro passar direto. Menos é mais no meio do gol.',
   'O rival adora uma paradinha: se você voar antes do chute, já era. Segure o nervo!',
   'Bola fraca dá tempo de encaixar a defesa; bolão exige mergulho no ponto exato.',
+  'Defender vale como chutar: segurar bola que ia no ângulo paga 250!',
   'Chute no máximo de força sai um foguete, mas fica mais difícil de colocar no canto.',
   'Sequência de acertos multiplica os pontos: proteja seu combo!',
 ]
@@ -4173,90 +4358,7 @@ document.getElementById('btn-mute').addEventListener('click', (event) => {
   if (!audio.muted) audio.tap()
 })
 
-// ---------- Botão de ação (segurar/soltar) ----------
-// A carga pertence ao ponteiro que apertou (capture); actionHeld preserva o hold entre fases.
-let actionPointerId = null
-let actionHeld = false
-let actionKeyHeld = false
-
-hud.nodes.shootBtn.addEventListener('pointerdown', (event) => {
-  event.preventDefault()
-  actionPointerId = event.pointerId
-  hud.nodes.shootBtn.setPointerCapture?.(event.pointerId)
-  actionHeld = true
-  onActionPress()
-})
-const onActionPointerEnd = (event) => {
-  if (event.pointerId !== actionPointerId) return
-  actionPointerId = null
-  actionHeld = false
-  onActionRelease()
-}
-hud.nodes.shootBtn.addEventListener('pointerup', onActionPointerEnd)
-hud.nodes.shootBtn.addEventListener('pointercancel', onActionPointerEnd)
-hud.nodes.shootBtn.addEventListener('contextmenu', (event) => event.preventDefault())
-
-window.addEventListener('keydown', (event) => {
-  if (event.key !== ' ' && event.key !== 'Enter') return
-  if (event.repeat) return
-  // Com outro botão focado (voltar, som), deixa a ativação nativa acontecer
-  const focused = document.activeElement
-  if (focused?.tagName === 'BUTTON' && focused !== hud.nodes.shootBtn) return
-  actionHeld = true
-  actionKeyHeld = true
-  if (game.phase === 'aim' || game.phase === 'windup' || game.phase === 'flight') {
-    event.preventDefault()
-    onActionPress()
-  }
-})
-window.addEventListener('keyup', (event) => {
-  if (event.key !== ' ' && event.key !== 'Enter') return
-  // keyup solto sem keydown próprio não pode largar um hold do ponteiro
-  if (!actionKeyHeld) return
-  actionKeyHeld = false
-  if (actionPointerId !== null) return
-  actionHeld = false
-  onActionRelease()
-})
-
-function onActionPress() {
-  if (game.mode === 'striker' && game.phase === 'aim' && !game.charge) {
-    game.charge = { start: game.time, notifiedFull: false }
-    hud.setShootLabel('Solte para chutar!')
-  } else if (game.mode === 'keeper' && (game.phase === 'windup' || game.phase === 'flight')) {
-    if (game.defense && !game.defense.released) {
-      game.defense.holding = true
-      hud.setShootLabel('Solte para voar!')
-    }
-  }
-}
-
-function onActionRelease() {
-  if (game.mode === 'striker' && game.charge && game.phase === 'aim') {
-    const holdMs = (game.time - game.charge.start) * 1000
-    game.charge = null
-    hud.setPower(0)
-    shoot(holdMs)
-  } else if (
-    game.mode === 'keeper' &&
-    (game.phase === 'windup' || game.phase === 'flight') &&
-    game.defense?.holding &&
-    !game.defense.released
-  ) {
-    // Voa para onde a mira aponta AGORA — soltar cedo demais é por conta própria
-    const target = {
-      x: Math.max(-1, Math.min(1, game.aim.x)),
-      y: Math.max(0.08, Math.min(1, game.aim.y)),
-    }
-    game.defense.released = true
-    game.defense.releaseTime = game.time
-    game.defense.target = target
-    game.defense.diveTime = diveTravelTime(Math.hypot(target.x - DIVE_START.x, target.y - DIVE_START.y))
-    hud.setShootLabel('Voou!')
-    audio.tap()
-    navigator.vibrate?.(15)
-  }
-}
+// Entrada do botão/tela: ver src/input/actions.js (inicializada no fim do arquivo)
 
 // ---------- Chacoalhada ----------
 tilt.onShake(() => {
@@ -4303,6 +4405,7 @@ tilt.attachDragArea(canvas.parentElement)
 function goToMenu() {
   game.phase = 'menu'
   game.mode = null
+  tilt.setDragEnabled(true)
   releaseWakeLock()
   refreshMenuBests()
   hud.showScreen('menu')
@@ -4349,23 +4452,26 @@ function startRound() {
   game.special = null
   hud.showSpecial(null)
   hud.setPower(0)
+  // Goleiro com sensor: tela inteira é o botão de defesa (sem mira por arrasto)
+  tilt.setDragEnabled(!(game.mode === 'keeper' && tilt.state.mode === 'tilt'))
   if (game.mode === 'striker') {
     setPhase('aim')
     hud.setShootEnabled(true)
     hud.setShootLabel('Segure e solte!')
     setAimHint()
     // Jogador já estava segurando desde o outcome anterior: rearma a carga
-    if (actionHeld) game.charge = { start: game.time, notifiedFull: false }
+    if (actionInput.isHeld()) game.charge = { start: game.time, notifiedFull: false }
   } else {
-    game.defense = { holding: false, released: false, releaseTime: 0, target: null, diveTime: 0 }
+    game.defense = { holding: false, chargeStart: null, released: false, releaseTime: 0, target: null, power: 0, plan: null, diveTime: 0 }
     game.aiPlan = aiKickPlan({ round: game.state.round, rngValue: Math.random() })
     game.provocation = { nerve: 0, feintUntil: 0 }
     setPhase('windup')
     hud.setShootEnabled(true)
     hud.setShootLabel('Defender!')
     setKeeperHint()
-    if (actionHeld) {
+    if (actionInput.isHeld()) {
       game.defense.holding = true
+      game.defense.chargeStart = game.time
       hud.setShootLabel('Solte para voar!')
     }
   }
@@ -4384,9 +4490,9 @@ function setAimHint() {
 
 function setKeeperHint() {
   const hints = {
-    tilt: 'Incline a mira no canto · <b>solte para voar</b> até ela · chacoalhe = finta',
-    touch: 'Arraste a mira · segure e <b>solte para voar</b> até ela · 2 toques = finta',
-    teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> segura, soltar = voo · <b>X</b> = finta',
+    tilt: '<b>Segure a tela</b> para carregar · incline a mira · <b>solte</b> = voo',
+    touch: 'Arraste a mira · <b>segure Defender</b> para carregar · soltar = voo',
+    teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> carrega, soltar = voo · <b>X</b> = finta',
   }
   hud.setHint(hints[tilt.state.mode] ?? hints.touch)
 }
@@ -4543,6 +4649,7 @@ function endKeeperFlight() {
     // Instante determinístico do cruzamento (sem o overshoot do frame)
     releaseLead: defense.released ? game.kickTime + shot.duration - defense.releaseTime : 0,
     target: defense.target ?? undefined,
+    power: defense.power,
     shot: { x: shot.x, y: shot.y },
     shotDuration: shot.duration,
   })
@@ -4552,8 +4659,9 @@ function endKeeperFlight() {
     Boolean(game.aiPlan?.feint) && !saved && !rivalMissed && defense.released && defense.releaseTime < game.kickTime
   const success = saved || rivalMissed
   const perfect = saved && result.phase === 'stretched'
+  // Defesa paga na MESMA tabela do batedor: segurar bola de ângulo vale 250
   const points = saved
-    ? savePoints2D({ x: shot.x, y: shot.y }) + (perfect ? 25 : 0)
+    ? pointsForPlacement(shot.x, shot.y) + (perfect ? 25 : 0)
     : rivalMissed
       ? PROVOKE_MISS_POINTS
       : 0
@@ -4564,7 +4672,7 @@ function endKeeperFlight() {
   game.shot.saved = saved
   game.shot.rivalMissed = rivalMissed
   game.shot.defenseResult = result
-  if (game.duelActive) duelCtl.keeperResolved(result, game.defense.target)
+  if (game.duelActive) duelCtl.keeperResolved(result, result.keeperAt)
 
   if (saved) {
     hud.flash(perfect ? 'Defesaça!' : 'Defendeu!', 'save')
@@ -4589,7 +4697,9 @@ function endKeeperFlight() {
       stretched: 'Canto errado!',
       grounded: 'Pulou cedo!',
     }
-    hud.flash(boughtFeint ? 'Comprou a finta!' : (phaseMsg[result.phase] ?? 'Gol sofrido'), 'miss')
+    const plan = result.plan
+    const forceMsg = plan?.short ? 'Faltou força!' : plan && defense.power - plan.needed > 0.3 ? 'Passou direto!' : null
+    hud.flash(boughtFeint ? 'Comprou a finta!' : (forceMsg ?? phaseMsg[result.phase] ?? 'Gol sofrido'), 'miss')
     if (!reducedMotion) ripple(fx)
     audio.miss()
     navigator.vibrate?.([24, 40, 24])
@@ -4702,6 +4812,8 @@ function updateGame(dt) {
       audio.tap()
       navigator.vibrate?.(20)
     }
+  } else if (game.defense?.holding && !game.defense.released) {
+    hud.setPower(Math.min(1, (game.time - game.defense.chargeStart) / DEFENSE_CHARGE_S))
   }
 
   game.phaseT += dt
@@ -4770,6 +4882,8 @@ const duelCtl = createDuelController({
   },
 })
 duelCtl.init()
+
+const actionInput = initActionInput({ game, hud, audio, tilt, shoot: (holdMs) => shoot(holdMs) })
 
 // Ao voltar para a aba: recalibra (o usuário pode ter mudado de posição) e
 // readquire o wake lock, que o navegador libera quando a aba fica oculta
