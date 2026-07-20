@@ -2,12 +2,15 @@
 // Todas as funções recebem a geometria `g` calculada a partir do tamanho do canvas.
 import { ZONE_GRID, GRID_COLS } from '../game/zones.js'
 
-export function geometry(w, h) {
-  const goalW = w * 0.76
-  const goalCX = w / 2
-  const crossbarY = h * 0.16
+// `view` (cobrança de falta): scale encolhe o gol com a distância do sorteio
+// e shiftX desloca a câmera quando a falta é lateral
+export function geometry(w, h, view = null) {
+  const scale = view?.scale ?? 1
+  const goalW = w * 0.76 * scale
+  const goalCX = w / 2 + (view?.shiftX ?? 0) * w
   const goalBaseY = h * 0.46
-  const postW = Math.max(3, w * 0.013)
+  const crossbarY = goalBaseY - (goalBaseY - h * 0.16) * scale
+  const postW = Math.max(3, w * 0.013 * scale)
   const aimHalf = goalW / 2 - postW * 2.2
   return {
     w,
@@ -47,7 +50,7 @@ const staticCache = { key: '', canvas: null }
 const SUPERSAMPLE = 2
 
 export function drawStadium(ctx, g, time) {
-  const key = `${g.w}x${g.h}`
+  const key = `${g.w}x${g.h}:${Math.round(g.goalCX)}x${Math.round(g.goalW)}`
   if (staticCache.key !== key) {
     staticCache.key = key
     staticCache.canvas = buildStaticStadium(g)

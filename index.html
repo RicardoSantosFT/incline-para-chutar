@@ -96,6 +96,10 @@
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3 19 5.6v5.1c0 4.6-2.9 7.7-7 9.3-4.1-1.6-7-4.7-7-9.3V5.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.6 11.9 11 14.3l4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span><b>Ser o goleiro</b><small>Incline e defenda os chutes</small></span>
           </button>
+          <button id="btn-mode-falta" class="cta cta--gold" type="button">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M4 20V9M9 20V9M15 20V9M20 20V9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="5.4" r="2.2" fill="currentColor"/></svg>
+            <span><b>Cobrança de falta</b><small>Barreira, vento, chuva e neve</small></span>
+          </button>
           <button id="btn-mode-duel" class="cta cta--blue" type="button">
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="8" cy="8.6" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16.4" cy="9.8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.4 19c.5-3 2.4-4.7 4.6-4.7s4.1 1.7 4.6 4.7M12.9 18.6c.4-2.2 1.8-3.6 3.5-3.6 1.7 0 3.1 1.3 3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             <span><b>Duelo online</b><small>Desafie um amigo em tempo real</small></span>
@@ -138,6 +142,48 @@
         </div>
       </section>
 
+      <!-- ===== COBRANÇA DE FALTA ===== -->
+      <section id="screen-falta" class="screen" aria-labelledby="falta-title">
+        <header class="game-top">
+          <button id="btn-falta-back" class="icon-button" type="button" aria-label="Voltar ao menu">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <h2 id="falta-title" class="game-title">Cobrança de falta</h2>
+          <span aria-hidden="true"></span>
+        </header>
+
+        <div class="falta-intro">
+          <p class="menu-sub">A cada bola, o jogo <b>sorteia o local da falta e o clima</b>: chuva, neve, vento a favor, contra ou lateral. Tudo muda a física da bola — e os pontos!</p>
+          <ul class="falta-rules" role="list">
+            <li>🧱 <b>Barreira de 1 a 7</b>: cada jogador na barreira soma <b>+20 pontos</b> ao gol do batedor — e barreira pequena faz a defesa do goleiro valer muito mais.</li>
+            <li>📍 <b>Local sorteado</b>: falta longe ou aberta paga mais para quem bate; falta perto e frontal paga mais para quem defende.</li>
+            <li>⚖️ <b>Física real</b>: pouca força sobe por cima da barreira; bomba rasteira morre nela; canto com força contorna com curva.</li>
+          </ul>
+
+          <div class="best-row">
+            <article class="best-card best-card--gold">
+              <h3>Recorde batendo</h3>
+              <strong id="best-falta-striker">0</strong>
+            </article>
+            <article class="best-card best-card--purple">
+              <h3>Recorde defendendo</h3>
+              <strong id="best-falta-keeper">0</strong>
+            </article>
+          </div>
+
+          <div class="menu-actions">
+            <button id="btn-falta-striker" class="cta cta--green" type="button">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 8.1 15.6 10.7 14.2 14.9 9.8 14.9 8.4 10.7Z" fill="currentColor"/></svg>
+              <span><b>Bater as faltas</b><small>Vença a barreira e o clima</small></span>
+            </button>
+            <button id="btn-falta-keeper" class="cta cta--purple" type="button">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3 19 5.6v5.1c0 4.6-2.9 7.7-7 9.3-4.1-1.6-7-4.7-7-9.3V5.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.6 11.9 11 14.3l4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span><b>Fechar o gol</b><small>Monte a barreira e defenda</small></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- ===== JOGO ===== -->
       <section id="screen-game" class="screen" aria-label="Partida em andamento">
         <header class="game-top">
@@ -158,6 +204,7 @@
           <canvas id="scene" role="img" aria-label="Cena do jogo: campo de futebol com o gol ao fundo; a mira acompanha a inclinação do celular"></canvas>
           <div id="special-badge" class="special-badge" aria-hidden="true" hidden></div>
           <div id="shot-clock" class="shot-clock" aria-hidden="true" hidden></div>
+          <div id="falta-banner" class="falta-banner" role="status" hidden></div>
           <div id="flash-msg" class="flash-msg" aria-hidden="true"></div>
           <div id="round-live" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
@@ -240,6 +287,17 @@
           <p id="perm-error" class="perm-error" hidden></p>
           <button id="btn-grant" class="cta cta--green" type="button"><b>Ativar sensor</b></button>
           <button id="btn-skip-sensor" class="ghost-button" type="button">Jogar sem sensor (arrastar o dedo)</button>
+        </div>
+      </div>
+
+      <div id="overlay-wall" class="overlay" role="dialog" aria-modal="true" aria-labelledby="wall-title" hidden>
+        <div class="overlay-card">
+          <span class="overlay-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="icon"><path d="M4 20V9M9 20V9M15 20V9M20 20V9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="5.4" r="2.2" fill="currentColor"/></svg>
+          </span>
+          <h2 id="wall-title">Monte sua barreira</h2>
+          <p id="wall-spot-info"></p>
+          <div id="wall-buttons" class="wall-buttons" role="group" aria-label="Quantos jogadores na barreira"></div>
         </div>
       </div>
 

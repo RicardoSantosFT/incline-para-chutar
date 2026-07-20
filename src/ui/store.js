@@ -2,6 +2,8 @@
 export const STORAGE = {
   striker: 'iprachute:best:striker',
   keeper: 'iprachute:best:keeper',
+  faltaStriker: 'iprachute:best:falta-striker',
+  faltaKeeper: 'iprachute:best:falta-keeper',
   muted: 'iprachute:muted',
 }
 

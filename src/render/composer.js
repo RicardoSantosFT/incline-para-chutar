@@ -67,7 +67,10 @@ export function renderStriker(ctx, g, game) {
   }
 
   // Gol marcado: no outcome a bola está na rede, atrás do goleiro
-  const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.offTarget
+  const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.offTarget && !shot.hitWall
+  // Falta que morreu na barreira: trajetória interrompida na fração do voo
+  const clamp = shot?.trajClamp ?? 1
+  const arcFor = (s) => (s.loft != null ? s.loft * 0.12 : s.cavadinha ? 0.12 : (1 - s.power) * 0.05)
 
   if (phase === 'aim') {
     drawKeeper(ctx, g, keeperPose, 'rival')
@@ -87,10 +90,10 @@ export function renderStriker(ctx, g, game) {
   } else if (phase === 'flight') {
     drawKeeper(ctx, g, keeperPose, 'rival')
     drawStriker(ctx, g, { progress: 1, kicking: true, pose: shot.pose, palette: 'player' })
-    const t = Math.min(1, phaseT / shot.flightDur)
+    const t = Math.min(1, phaseT / shot.flightDur) * clamp
     const pos = ballFlightPos(g, t, shot.shot.x, shot.shot.y, {
       curve: shot.curve,
-      arcBoost: shot.cavadinha ? 0.12 : (1 - shot.power) * 0.05,
+      arcBoost: arcFor(shot),
     })
     game.spin += (shot.cavadinha ? 7.2 : 18) * dt
     pushTrail(game, pos)
@@ -104,14 +107,16 @@ export function renderStriker(ctx, g, game) {
     drawTrail(ctx, game.trail, g)
     drawBall(ctx, { ...pos, spin: game.spin }, g)
   } else if (phase === 'outcome') {
-    const pos = ballFlightPos(g, 1, shot.shot.x, shot.shot.y, { curve: shot.curve })
+    const pos = ballFlightPos(g, clamp, shot.shot.x, shot.shot.y, { curve: shot.curve, arcBoost: arcFor(shot) })
     const settle = Math.min(1, phaseT / 0.4)
     ctx.save()
     ctx.globalAlpha = 1 - settle
     drawTrail(ctx, game.trail, g)
     ctx.restore()
     // Bola por cima do travessão some ao fundo; gol morre no fundo da rede
-    const ballProps = shot.overBar
+    const ballProps = shot.hitWall
+      ? { x: pos.x, y: pos.y + settle * settle * g.goalH * 0.6, scale: pos.scale, spin: game.spin, alpha: 1 - settle * 0.3 }
+      : shot.overBar
       ? { x: pos.x, y: pos.y - settle * g.goalH * 0.12, scale: pos.scale * (1 - settle * 0.5), spin: game.spin, alpha: 1 - settle }
       : ballInNet
         ? { ...ballIntoNet(g, pos, shot.shot.x, shot.shot.y, settle), spin: game.spin, alpha: 1 - settle * 0.25 }
@@ -160,7 +165,9 @@ export function renderKeeperMode(ctx, g, game) {
     }
   }
 
-  const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.rivalMissed
+  const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.rivalMissed && !shot.hitWall
+  const clamp = shot?.trajClamp ?? 1
+  const arc = shot?.loft != null ? shot.loft * 0.1 : 0
   // Retícula do goleiro: escolhe o ponto do voo até o momento de soltar
   const showReticle = !defense?.released && (phase === 'countdown' || phase === 'windup' || phase === 'flight')
 
@@ -183,21 +190,23 @@ export function renderKeeperMode(ctx, g, game) {
     drawStriker(ctx, g, { progress: 1, kicking: true, palette: 'rival' })
     // Retícula atrás da bola: escurecer a bola no instante da decisão atrapalha
     if (showReticle) drawKeeperReticle(ctx, g, game, charging, chargePower)
-    const t = Math.min(1, phaseT / shot.duration)
-    const pos = ballFlightPos(g, t, shot.x, shot.y, {})
+    const t = Math.min(1, phaseT / shot.duration) * clamp
+    const pos = ballFlightPos(g, t, shot.x, shot.y, { arcBoost: arc })
     game.spin += 20.4 * dt
     pushTrail(game, pos)
     drawTrail(ctx, game.trail, g)
     drawBall(ctx, { ...pos, spin: game.spin }, g)
   } else if (phase === 'outcome') {
-    const pos = ballFlightPos(g, 1, shot.x, shot.y, {})
+    const pos = ballFlightPos(g, clamp, shot.x, shot.y, { arcBoost: arc })
     const settle = Math.min(1, phaseT / 0.4)
     ctx.save()
     ctx.globalAlpha = 1 - settle
     drawTrail(ctx, game.trail, g)
     ctx.restore()
     const bounceX = shot.saved ? (Math.sign(shot.x) || 1) * settle * g.w * 0.12 : 0
-    const ballProps = ballInNet
+    const ballProps = shot.hitWall
+      ? { x: pos.x, y: pos.y + settle * settle * g.goalH * 0.6, scale: pos.scale, spin: game.spin, alpha: 1 - settle * 0.3 }
+      : ballInNet
       ? { ...ballIntoNet(g, pos, shot.x, shot.y, settle), spin: game.spin, alpha: 1 - settle * 0.25 }
       : {
           x: pos.x + bounceX,

@@ -820,6 +820,75 @@ img { max-width: 100%; height: auto; }
   .gp-dots { height: 26px; }
 }
 
+/* ===== Cobrança de falta ===== */
+.cta--gold {
+  background: linear-gradient(160deg, #ffe9a3, #ffce3d 55%, #e0a114);
+  color: #3a2703;
+  box-shadow: 0 10px 26px rgba(255, 206, 61, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.best-card--gold { border-color: rgba(255, 206, 61, 0.45); }
+.best-card--gold h3 { color: #ffce3d; }
+
+.falta-intro { display: flex; flex-direction: column; gap: 14px; padding: 4px 2px 14px; }
+.falta-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(10, 28, 58, 0.55);
+  border: 1px solid rgba(82, 132, 223, 0.28);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #c9d4ea;
+}
+.falta-rules b { color: #eaf2ff; }
+
+.falta-banner {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  max-width: 68%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(4, 14, 34, 0.78);
+  border: 1px solid rgba(120, 243, 63, 0.35);
+  color: #dbe7ff;
+  font-size: 11.5px;
+  line-height: 1.35;
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+.falta-banner b { color: #b9f68f; font-weight: 800; }
+
+.wall-buttons {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 7px;
+  width: 100%;
+  margin-top: 4px;
+}
+.wall-btn {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 1.5px solid rgba(120, 243, 63, 0.4);
+  background: rgba(16, 44, 88, 0.7);
+  color: #eaf2ff;
+  font-size: 19px;
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+.wall-btn:active { transform: scale(0.92); }
+.wall-btn:focus-visible { outline: 2px solid #78f33f; outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .wall-btn:hover { background: rgba(46, 96, 168, 0.8); border-color: #78f33f; transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wall-btn, .cta--gold { transition: none; }
+}
+
 </style>
 
   <div class="viewport-shell">
@@ -907,6 +976,10 @@ img { max-width: 100%; height: auto; }
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3 19 5.6v5.1c0 4.6-2.9 7.7-7 9.3-4.1-1.6-7-4.7-7-9.3V5.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.6 11.9 11 14.3l4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span><b>Ser o goleiro</b><small>Incline e defenda os chutes</small></span>
           </button>
+          <button id="btn-mode-falta" class="cta cta--gold" type="button">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M4 20V9M9 20V9M15 20V9M20 20V9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="5.4" r="2.2" fill="currentColor"/></svg>
+            <span><b>Cobrança de falta</b><small>Barreira, vento, chuva e neve</small></span>
+          </button>
           <button id="btn-mode-duel" class="cta cta--blue" type="button">
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="8" cy="8.6" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16.4" cy="9.8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.4 19c.5-3 2.4-4.7 4.6-4.7s4.1 1.7 4.6 4.7M12.9 18.6c.4-2.2 1.8-3.6 3.5-3.6 1.7 0 3.1 1.3 3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             <span><b>Duelo online</b><small>Desafie um amigo em tempo real</small></span>
@@ -949,6 +1022,48 @@ img { max-width: 100%; height: auto; }
         </div>
       </section>
 
+      <!-- ===== COBRANÇA DE FALTA ===== -->
+      <section id="screen-falta" class="screen" aria-labelledby="falta-title">
+        <header class="game-top">
+          <button id="btn-falta-back" class="icon-button" type="button" aria-label="Voltar ao menu">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <h2 id="falta-title" class="game-title">Cobrança de falta</h2>
+          <span aria-hidden="true"></span>
+        </header>
+
+        <div class="falta-intro">
+          <p class="menu-sub">A cada bola, o jogo <b>sorteia o local da falta e o clima</b>: chuva, neve, vento a favor, contra ou lateral. Tudo muda a física da bola — e os pontos!</p>
+          <ul class="falta-rules" role="list">
+            <li>🧱 <b>Barreira de 1 a 7</b>: cada jogador na barreira soma <b>+20 pontos</b> ao gol do batedor — e barreira pequena faz a defesa do goleiro valer muito mais.</li>
+            <li>📍 <b>Local sorteado</b>: falta longe ou aberta paga mais para quem bate; falta perto e frontal paga mais para quem defende.</li>
+            <li>⚖️ <b>Física real</b>: pouca força sobe por cima da barreira; bomba rasteira morre nela; canto com força contorna com curva.</li>
+          </ul>
+
+          <div class="best-row">
+            <article class="best-card best-card--gold">
+              <h3>Recorde batendo</h3>
+              <strong id="best-falta-striker">0</strong>
+            </article>
+            <article class="best-card best-card--purple">
+              <h3>Recorde defendendo</h3>
+              <strong id="best-falta-keeper">0</strong>
+            </article>
+          </div>
+
+          <div class="menu-actions">
+            <button id="btn-falta-striker" class="cta cta--green" type="button">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 8.1 15.6 10.7 14.2 14.9 9.8 14.9 8.4 10.7Z" fill="currentColor"/></svg>
+              <span><b>Bater as faltas</b><small>Vença a barreira e o clima</small></span>
+            </button>
+            <button id="btn-falta-keeper" class="cta cta--purple" type="button">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3 19 5.6v5.1c0 4.6-2.9 7.7-7 9.3-4.1-1.6-7-4.7-7-9.3V5.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.6 11.9 11 14.3l4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span><b>Fechar o gol</b><small>Monte a barreira e defenda</small></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- ===== JOGO ===== -->
       <section id="screen-game" class="screen" aria-label="Partida em andamento">
         <header class="game-top">
@@ -969,6 +1084,7 @@ img { max-width: 100%; height: auto; }
           <canvas id="scene" role="img" aria-label="Cena do jogo: campo de futebol com o gol ao fundo; a mira acompanha a inclinação do celular"></canvas>
           <div id="special-badge" class="special-badge" aria-hidden="true" hidden></div>
           <div id="shot-clock" class="shot-clock" aria-hidden="true" hidden></div>
+          <div id="falta-banner" class="falta-banner" role="status" hidden></div>
           <div id="flash-msg" class="flash-msg" aria-hidden="true"></div>
           <div id="round-live" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
@@ -1051,6 +1167,17 @@ img { max-width: 100%; height: auto; }
           <p id="perm-error" class="perm-error" hidden></p>
           <button id="btn-grant" class="cta cta--green" type="button"><b>Ativar sensor</b></button>
           <button id="btn-skip-sensor" class="ghost-button" type="button">Jogar sem sensor (arrastar o dedo)</button>
+        </div>
+      </div>
+
+      <div id="overlay-wall" class="overlay" role="dialog" aria-modal="true" aria-labelledby="wall-title" hidden>
+        <div class="overlay-card">
+          <span class="overlay-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="icon"><path d="M4 20V9M9 20V9M15 20V9M20 20V9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="5.4" r="2.2" fill="currentColor"/></svg>
+          </span>
+          <h2 id="wall-title">Monte sua barreira</h2>
+          <p id="wall-spot-info"></p>
+          <div id="wall-buttons" class="wall-buttons" role="group" aria-label="Quantos jogadores na barreira"></div>
         </div>
       </div>
 
@@ -1507,6 +1634,229 @@ function resolveKeeperDefense({ released, releaseLead = 0, target = DIVE_START, 
 }
 
 
+
+// Cobrança de falta: física realista simplificada em metros.
+// A bola precisa passar POR CIMA da barreira (voo alto e mais lento) ou
+// CONTORNÁ-LA com efeito (canto com força). Vento, chuva e neve alteram
+// velocidade, curva e alcance do goleiro. Tudo puro e determinístico via rng.
+const WALL_MIN = 1
+const WALL_MAX = 7
+const WALL_DIST_M = 9.15 // distância regulamentar da barreira
+const WALL_PLAYER_W_M = 0.55
+const WALL_HEIGHT_M = 2.1 // jogador de 1,85m saltando (mãos não valem!)
+const GOAL_HALF_M = 3.66
+const GOAL_HEIGHT_M = 2.44
+const FALTA_DIST_MIN = 17
+const FALTA_DIST_MAX = 28
+const FALTA_LAT_MAX = 12
+const FALTA_WALL_STEP = 20 // pontos por jogador na barreira (gol)
+const FALTA_BLOCK_POINTS = 30 // barreira salvou: pouco, mas mantém o combo
+const GRAVITY = 9.81
+const BASE_SPEED = 16 // m/s com força zero
+const SPEED_RANGE = 16 // + até 16 m/s com força cheia
+const FORWARD_RATIO = 0.82 // componente média para frente (voo com loft)
+
+function sortearFalta({ rngDist, rngLat, rngSide }) {
+  const dist = FALTA_DIST_MIN + rngDist * (FALTA_DIST_MAX - FALTA_DIST_MIN)
+  const side = rngSide >= 0.5 ? 1 : -1
+  const lat = side * rngLat * FALTA_LAT_MAX
+  return { dist, lat, d: Math.hypot(dist, lat) }
+}
+
+const CLIMA_DEFS = [
+  { id: 'limpo', nome: 'Noite limpa', emoji: '🌙', aviso: 'Condições perfeitas', mult: 1, windX: 0, windZ: 0 },
+  { id: 'vento-favor', nome: 'Vento a favor', emoji: '💨', aviso: 'A bola chega mais rápido', mult: 1.1, windX: 0, windZ: 6 },
+  { id: 'vento-contra', nome: 'Vento contra', emoji: '🌬️', aviso: 'A bola perde força no ar', mult: 1.1, windX: 0, windZ: -6 },
+  { id: 'vento-lateral', nome: 'Vento lateral', emoji: '🍃', aviso: 'A bola desvia no ar', mult: 1.2, windX: 7, windZ: 0 },
+  { id: 'chuva', nome: 'Chuva', emoji: '🌧️', aviso: 'Bola escorregadia para o goleiro', mult: 1.25, windX: 0, windZ: 0 },
+  { id: 'neve', nome: 'Neve', emoji: '❄️', aviso: 'Bola pesada e mais lenta', mult: 1.35, windX: 0, windZ: -3 },
+]
+
+function sortearClima({ rngKind, rngStrength, rngSide }) {
+  const def = CLIMA_DEFS[Math.min(CLIMA_DEFS.length - 1, Math.floor(rngKind * CLIMA_DEFS.length))]
+  const strength = 0.6 + rngStrength * 0.4
+  const side = rngSide >= 0.5 ? 1 : -1
+  return { ...def, windX: def.windX * strength * side, windZ: def.windZ * strength }
+}
+
+// Dificuldade do local (0..100): longe e aberto = mais difícil marcar
+function faltaSpotBonus(spot) {
+  const distPart = ((spot.dist - FALTA_DIST_MIN) / (FALTA_DIST_MAX - FALTA_DIST_MIN)) * 60
+  const latPart = (Math.abs(spot.lat) / FALTA_LAT_MAX) * 40
+  return Math.round(Math.min(100, distPart + latPart))
+}
+
+// Quanto do gol a barreira tapa, visto da bola (projeção no plano do gol)
+function wallCoverage({ spot, wallCount }) {
+  const halfM = (wallCount * WALL_PLAYER_W_M) / 2
+  const fraction = WALL_DIST_M / spot.d
+  const projHalfX = (halfM * (spot.d / WALL_DIST_M)) / GOAL_HALF_M
+  return { halfM, fraction, projHalfX }
+}
+
+// Voo balístico: T pela distância e velocidade; vy escolhido para chegar na
+// altura da mira; a altura na barreira decide se passa por cima
+function faltaPhysics({ power, spot, clima, targetYm }) {
+  const snowDrag = clima.id === 'neve' ? 0.9 : 1
+  const v = (BASE_SPEED + power * SPEED_RANGE) * snowDrag
+  const vEff = Math.max(8, v + clima.windZ * 0.55)
+  const T = Math.min(1.5, Math.max(0.55, spot.d / (vEff * FORWARD_RATIO)))
+  const fraction = WALL_DIST_M / spot.d
+  const tw = T * fraction
+  const vy = (targetYm + 0.5 * GRAVITY * T * T) / T
+  const yWall = vy * tw - 0.5 * GRAVITY * tw * tw
+  return { v, T, tw, vy, yWall, fraction }
+}
+
+// Curva natural do chute: contorna por fora e fecha no alvo
+const curveBow = (power) => 0.3 + power * 0.45
+
+function resolveFaltaShot({
+  aim,
+  stability,
+  power,
+  spot,
+  wallCount,
+  clima,
+  rngSpreadX,
+  rngSpreadY,
+  rngDiveZone,
+  rngDiveHeight,
+  rngDiveX = 0.5,
+}) {
+  const targetYm = Math.max(0.05, aim.y * GOAL_HEIGHT_M)
+  const phys = faltaPhysics({ power, spot, clima, targetYm })
+
+  // Dispersão: instabilidade + força + chuva; em metros no plano do gol
+  const spreadM = (1 - stability) * 1.1 + power * 0.5 + (clima.id === 'chuva' ? 0.25 : 0)
+  const driftM = clima.windX * 0.18 * phys.T * phys.T
+  const finalXm = aim.x * GOAL_HALF_M + (rngSpreadX - 0.5) * spreadM + driftM
+  const finalYm = targetYm + (rngSpreadY - 0.5) * spreadM * 0.8
+
+  // Posição lateral na barreira: reta bola→alvo + curva por fora + vento parcial
+  const { halfM, fraction } = wallCoverage({ spot, wallCount })
+  const dir = Math.sign(finalXm - spot.lat) || Math.sign(finalXm) || 1
+  const xAtWall =
+    spot.lat +
+    (finalXm - spot.lat) * fraction +
+    dir * curveBow(power) * Math.sin(Math.PI * fraction) +
+    clima.windX * 0.18 * phys.tw * phys.tw
+  const wallCenter = spot.lat * (1 - fraction)
+  const hitWall = Math.abs(xAtWall - wallCenter) < halfM && phys.yWall < WALL_HEIGHT_M
+
+  const x = finalXm / GOAL_HALF_M
+  const y = finalYm / GOAL_HEIGHT_M
+  const offTarget = !hitWall && isOffTarget2D(x, y)
+  const overBar = !hitWall && y > 1.02
+
+  // Goleiro: voo lento dá tempo de reagir; chuva/neve atrapalham a pegada
+  const dive = keeperDive2D({ rngZone: rngDiveZone, rngHeight: rngDiveHeight, rngX: rngDiveX })
+  let reach = Math.min(0.66, Math.max(0.22, 0.3 + (phys.T - 0.7) * 0.55))
+  if (clima.id === 'chuva') reach -= 0.06
+  if (clima.id === 'neve') reach -= 0.03
+  const gap = Math.hypot((x - dive.x) * 1.15, (y - dive.y) * 0.9)
+  const saved = !hitWall && !offTarget && gap < reach
+
+  const success = !hitWall && !offTarget && !saved
+  const points = success ? faltaGoalPoints({ shot: { x, y }, spot, wallCount, clima }) : 0
+  return {
+    shot: { x, y },
+    hitWall,
+    wallY: Math.min(1, Math.max(0, phys.yWall / GOAL_HEIGHT_M)),
+    offTarget,
+    overBar,
+    saved,
+    dive,
+    precise: success && pointsForPlacement(x, y) >= 175,
+    zoneId: zoneIdForPlacement(x, y),
+    points,
+    flightDur: phys.T,
+    wallT: phys.tw,
+    loft: phys.vy / phys.v,
+  }
+}
+
+function faltaGoalPoints({ shot, spot, wallCount, clima }) {
+  const base = pointsForPlacement(shot.x, shot.y) + wallCount * FALTA_WALL_STEP + faltaSpotBonus(spot)
+  return Math.round(base * clima.mult)
+}
+
+// Defesa: barreira pequena = goleiro exposto = paga mais; falta perto e
+// central é a mais difícil de defender (inverso do bônus do batedor)
+function faltaSavePoints({ shot, spot, wallCount, clima, perfect }) {
+  const base =
+    pointsForPlacement(shot.x, shot.y) + (WALL_MAX + 1 - wallCount) * FALTA_WALL_STEP + (100 - faltaSpotBonus(spot))
+  return Math.round(base * clima.mult) + (perfect ? 25 : 0)
+}
+
+// IA goleira (modo batedor): barreira maior quanto mais perigosa a falta
+function aiWallCount({ spot, rng }) {
+  const danger = 1 - faltaSpotBonus(spot) / 100
+  const count = Math.round(2 + danger * 4 + (rng - 0.5) * 2)
+  return Math.min(WALL_MAX, Math.max(WALL_MIN, count))
+}
+
+// IA batedora (modo goleiro): por cima da barreira ou colocada no canto
+function aiFaltaShot({ spot, wallCount, clima, round, rngKind, rngX, rngY, rngPower, rngWall }) {
+  const overWall = wallCount >= 5 ? rngKind < 0.82 : rngKind < 0.58
+  const skill = Math.min(0.25, round * 0.02)
+  let x, y, power, blockChance
+  if (overWall) {
+    x = (rngX - 0.5) * (1.5 + skill)
+    y = 0.6 + rngY * 0.36
+    power = 0.32 + rngPower * 0.3
+    blockChance = 0.05 * wallCount + (clima.id === 'neve' ? 0.05 : 0)
+  } else {
+    const side = rngX >= 0.5 ? 1 : -1
+    x = side * (0.74 + rngY * 0.3)
+    y = 0.12 + rngX * 0.45
+    power = 0.6 + rngPower * 0.35
+    blockChance = 0.02 * wallCount
+  }
+  const targetYm = Math.max(0.05, y * GOAL_HEIGHT_M)
+  const phys = faltaPhysics({ power, spot, clima, targetYm })
+  const hitWall = rngWall < blockChance
+  return { x, y, duration: phys.T, hitWall, wallT: phys.tw, loft: phys.vy / phys.v }
+}
+
+// Invólucros de rodada (rng injetado): menos cola no orquestrador
+function faltaStrikerResolve({ aim, stability, power, falta, rng }) {
+  const result = resolveFaltaShot({
+    aim,
+    stability,
+    power,
+    spot: falta.spot,
+    wallCount: falta.wallCount,
+    clima: falta.clima,
+    rngSpreadX: rng(),
+    rngSpreadY: rng(),
+    rngDiveZone: rng(),
+    rngDiveHeight: rng(),
+    rngDiveX: rng(),
+  })
+  return {
+    ...result,
+    flightDur: result.hitWall ? result.wallT : result.flightDur,
+    trajClamp: result.hitWall ? result.wallT / result.flightDur : 1,
+    curve: Math.abs(result.shot.x) > 0.3,
+  }
+}
+
+function faltaAiKick({ falta, round, nerveMiss, rng }) {
+  const fk = aiFaltaShot({
+    spot: falta.spot,
+    wallCount: falta.wallCount,
+    clima: falta.clima,
+    round,
+    rngKind: rng(),
+    rngX: rng(),
+    rngY: rng(),
+    rngPower: rng(),
+    rngWall: Math.min(1, rng() + nerveMiss),
+  })
+  // Bola na barreira: o voo termina (e a bola morre) na fração até ela
+  return fk.hitWall ? { ...fk, duration: fk.wallT, trajClamp: fk.wallT / fk.duration } : { ...fk, trajClamp: 1 }
+}
 
 function initialScore(best = 0) {
   return { score: 0, combo: 1, maxCombo: 1, hits: 0, round: 1, best }
@@ -2705,12 +3055,15 @@ function initActionInput({ game, hud, audio, tilt, shoot }) {
 
 // Cenário: estádio noturno, torcida, placas, gramado e gol com a grade 3×3.
 // Todas as funções recebem a geometria `g` calculada a partir do tamanho do canvas.
-function geometry(w, h) {
-  const goalW = w * 0.76
-  const goalCX = w / 2
-  const crossbarY = h * 0.16
+// `view` (cobrança de falta): scale encolhe o gol com a distância do sorteio
+// e shiftX desloca a câmera quando a falta é lateral
+function geometry(w, h, view = null) {
+  const scale = view?.scale ?? 1
+  const goalW = w * 0.76 * scale
+  const goalCX = w / 2 + (view?.shiftX ?? 0) * w
   const goalBaseY = h * 0.46
-  const postW = Math.max(3, w * 0.013)
+  const crossbarY = goalBaseY - (goalBaseY - h * 0.16) * scale
+  const postW = Math.max(3, w * 0.013 * scale)
   const aimHalf = goalW / 2 - postW * 2.2
   return {
     w,
@@ -2750,7 +3103,7 @@ const staticCache = { key: '', canvas: null }
 const SUPERSAMPLE = 2
 
 function drawStadium(ctx, g, time) {
-  const key = `${g.w}x${g.h}`
+  const key = `${g.w}x${g.h}:${Math.round(g.goalCX)}x${Math.round(g.goalW)}`
   if (staticCache.key !== key) {
     staticCache.key = key
     staticCache.canvas = buildStaticStadium(g)
@@ -3079,6 +3432,176 @@ function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = null, show
 function drawVignette(ctx, g) {
   ctx.fillStyle = gradientsFor(ctx, g).vignette
   ctx.fillRect(0, 0, g.w, g.h)
+}
+
+// Barreira da cobrança de falta: N jogadores rivais na linha bola→gol, a
+// 9,15m da bola, com tamanho proporcional à perspectiva (1,85m de altura na
+// escala do plano em que estão). Saltam juntos quando a bola sai.
+const PLAYER_H_M = 1.85
+const JUMP_M = 0.35
+const GOAL_H_M = 2.44
+const wallFract = (v) => v - Math.floor(v)
+const wallRand = (i) => wallFract(Math.sin(i * 91.7 + 47.3) * 24634.6345)
+
+// Mesma perspectiva do voo da bola: escala 1 na bola, 0,42 no gol
+function wallScreenAt(g, fraction) {
+  const x = g.spotX + (g.goalCX - g.spotX) * fraction
+  const y = g.spotY + (g.goalBaseY - g.spotY) * fraction
+  const scale = 1 - 0.58 * fraction
+  const pxPerMGoal = (2 * g.aimHalf) / 7.32
+  const pxPerM = (pxPerMGoal * scale) / 0.42
+  return { x, y, scale, pxPerM }
+}
+
+function drawWall(ctx, g, falta, { jumpT = 0, time = 0 } = {}) {
+  const fraction = WALL_DIST_M / falta.spot.d
+  const plane = wallScreenAt(g, fraction)
+  const wPx = WALL_PLAYER_W_M * plane.pxPerM
+  const hPx = (PLAYER_H_M / GOAL_H_M) * GOAL_H_M * plane.pxPerM
+  const lift = Math.sin(Math.PI * Math.min(1, jumpT)) * JUMP_M * plane.pxPerM
+  const n = falta.wallCount
+  const startX = plane.x - (n * wPx) / 2
+
+  for (let i = 0; i < n; i++) {
+    const px = startX + i * wPx + wPx / 2
+    const sway = jumpT > 0 ? 0 : Math.sin(time * 1.7 + i * 1.3) * wPx * 0.03
+    const baseY = plane.y
+    const topY = baseY - hPx - lift
+    // Sombra no gramado (fica no chão mesmo com o salto)
+    ctx.fillStyle = 'rgba(2, 8, 20, 0.35)'
+    ctx.beginPath()
+    ctx.ellipse(px, baseY + 2, wPx * 0.42, wPx * 0.13, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    const shade = 0.85 + wallRand(i) * 0.15
+    ctx.save()
+    ctx.translate(px + sway, 0)
+    // Pernas
+    ctx.fillStyle = `rgba(16, 42, 84, ${shade})`
+    ctx.fillRect(-wPx * 0.3, baseY - hPx * 0.42 - lift, wPx * 0.24, hPx * 0.42)
+    ctx.fillRect(wPx * 0.06, baseY - hPx * 0.42 - lift, wPx * 0.24, hPx * 0.42)
+    // Tronco (camisa azul rival)
+    ctx.fillStyle = `rgba(37, 108, 190, ${shade})`
+    const bodyH = hPx * 0.4
+    roundRectWall(ctx, -wPx * 0.36, topY + hPx * 0.18, wPx * 0.72, bodyH, wPx * 0.16)
+    ctx.fill()
+    // Braços: protegendo (parado) ou esticados para cima (salto)
+    ctx.strokeStyle = `rgba(37, 108, 190, ${shade})`
+    ctx.lineWidth = wPx * 0.16
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    if (jumpT > 0) {
+      ctx.moveTo(-wPx * 0.3, topY + hPx * 0.22)
+      ctx.lineTo(-wPx * 0.38, topY - hPx * 0.08)
+      ctx.moveTo(wPx * 0.3, topY + hPx * 0.22)
+      ctx.lineTo(wPx * 0.38, topY - hPx * 0.08)
+    } else {
+      ctx.moveTo(-wPx * 0.26, topY + hPx * 0.26)
+      ctx.lineTo(0, topY + hPx * 0.5)
+      ctx.moveTo(wPx * 0.26, topY + hPx * 0.26)
+      ctx.lineTo(0, topY + hPx * 0.5)
+    }
+    ctx.stroke()
+    // Cabeça
+    ctx.fillStyle = `rgba(226, 190, 156, ${shade})`
+    ctx.beginPath()
+    ctx.arc(0, topY + hPx * 0.09, wPx * 0.2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+}
+
+function roundRectWall(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
+// Clima na tela: chuva riscando, neve dançando ou rajadas de vento.
+// Determinístico por tempo (nenhum Math.random no render) e barato: contagem
+// fixa de partículas, tudo em transform/alpha.
+const wxFract = (v) => v - Math.floor(v)
+const wxRand = (i) => wxFract(Math.sin(i * 113.9 + 271.1) * 43141.59)
+
+const RAIN_DROPS = 70
+const SNOW_FLAKES = 46
+const GUST_LINES = 14
+
+function drawWeather(ctx, g, clima, time, reduced = false) {
+  if (!clima || clima.id === 'limpo') return
+  const { w, h } = g
+  if (reduced) {
+    // Sem animação: só um véu que comunica o clima
+    ctx.fillStyle = clima.id === 'neve' ? 'rgba(220, 232, 255, 0.08)' : 'rgba(120, 160, 220, 0.07)'
+    ctx.fillRect(0, 0, w, h)
+    return
+  }
+
+  if (clima.id === 'chuva') {
+    const slant = 0.18 + (clima.windX ?? 0) * 0.03
+    ctx.strokeStyle = 'rgba(170, 205, 255, 0.34)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    for (let i = 0; i < RAIN_DROPS; i++) {
+      const speed = 460 + wxRand(i) * 260
+      const len = 9 + wxRand(i + 31) * 10
+      const x = wxFract(wxRand(i) + time * slant * 0.5) * (w + 60) - 30
+      const y = wxFract(wxRand(i + 7) + (time * speed) / h) * (h + 40) - 20
+      ctx.moveTo(x, y)
+      ctx.lineTo(x - len * slant, y - len)
+    }
+    ctx.stroke()
+    return
+  }
+
+  if (clima.id === 'neve') {
+    ctx.fillStyle = 'rgba(235, 243, 255, 0.75)'
+    for (let i = 0; i < SNOW_FLAKES; i++) {
+      const speed = 34 + wxRand(i) * 40
+      const r = 1 + wxRand(i + 13) * 1.9
+      const sway = Math.sin(time * (0.7 + wxRand(i + 3)) + i) * 14
+      const x = wxFract(wxRand(i) + time * 0.012) * (w + 24) - 12 + sway
+      const y = wxFract(wxRand(i + 7) + (time * speed) / h) * (h + 16) - 8
+      ctx.globalAlpha = 0.4 + wxRand(i + 23) * 0.5
+      ctx.beginPath()
+      ctx.arc(x, y, r, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+    return
+  }
+
+  // Ventos: rajadas translúcidas correndo na direção do vento
+  const dirX = Math.sign(clima.windX || 0)
+  const alongZ = dirX === 0 // favor/contra: linhas "fugindo" na vertical da cena
+  ctx.strokeStyle = 'rgba(200, 225, 255, 0.2)'
+  ctx.lineWidth = 1.4
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  for (let i = 0; i < GUST_LINES; i++) {
+    const speed = 260 + wxRand(i) * 200
+    const len = 26 + wxRand(i + 11) * 40
+    if (alongZ) {
+      const up = (clima.windZ ?? 0) > 0 ? -1 : 1 // a favor sobe a tela (vai com a bola)
+      const x = wxRand(i) * w
+      const y = wxFract(wxRand(i + 7) + (time * speed * up) / h) * (h + 60) - 30
+      const wobble = Math.sin(time * 2 + i) * 6
+      ctx.moveTo(x + wobble, y)
+      ctx.quadraticCurveTo(x + wobble + 8, y + (len / 2) * up, x + wobble, y + len * up)
+    } else {
+      const x = wxFract(wxRand(i) + (time * speed * dirX) / w) * (w + 80) - 40
+      const y = wxRand(i + 7) * h
+      const wobble = Math.sin(time * 2 + i) * 5
+      ctx.moveTo(x, y + wobble)
+      ctx.quadraticCurveTo(x + (len / 2) * dirX, y + wobble - 4, x + len * dirX, y + wobble)
+    }
+  }
+  ctx.stroke()
+  ctx.lineCap = 'butt'
 }
 
 // Carregador de sprites da raposa. Os sprites são opcionais: enquanto não
@@ -3708,7 +4231,10 @@ function renderStriker(ctx, g, game) {
   }
 
   // Gol marcado: no outcome a bola está na rede, atrás do goleiro
-  const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.offTarget
+  const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.offTarget && !shot.hitWall
+  // Falta que morreu na barreira: trajetória interrompida na fração do voo
+  const clamp = shot?.trajClamp ?? 1
+  const arcFor = (s) => (s.loft != null ? s.loft * 0.12 : s.cavadinha ? 0.12 : (1 - s.power) * 0.05)
 
   if (phase === 'aim') {
     drawKeeper(ctx, g, keeperPose, 'rival')
@@ -3728,10 +4254,10 @@ function renderStriker(ctx, g, game) {
   } else if (phase === 'flight') {
     drawKeeper(ctx, g, keeperPose, 'rival')
     drawStriker(ctx, g, { progress: 1, kicking: true, pose: shot.pose, palette: 'player' })
-    const t = Math.min(1, phaseT / shot.flightDur)
+    const t = Math.min(1, phaseT / shot.flightDur) * clamp
     const pos = ballFlightPos(g, t, shot.shot.x, shot.shot.y, {
       curve: shot.curve,
-      arcBoost: shot.cavadinha ? 0.12 : (1 - shot.power) * 0.05,
+      arcBoost: arcFor(shot),
     })
     game.spin += (shot.cavadinha ? 7.2 : 18) * dt
     pushTrail(game, pos)
@@ -3745,14 +4271,16 @@ function renderStriker(ctx, g, game) {
     drawTrail(ctx, game.trail, g)
     drawBall(ctx, { ...pos, spin: game.spin }, g)
   } else if (phase === 'outcome') {
-    const pos = ballFlightPos(g, 1, shot.shot.x, shot.shot.y, { curve: shot.curve })
+    const pos = ballFlightPos(g, clamp, shot.shot.x, shot.shot.y, { curve: shot.curve, arcBoost: arcFor(shot) })
     const settle = Math.min(1, phaseT / 0.4)
     ctx.save()
     ctx.globalAlpha = 1 - settle
     drawTrail(ctx, game.trail, g)
     ctx.restore()
     // Bola por cima do travessão some ao fundo; gol morre no fundo da rede
-    const ballProps = shot.overBar
+    const ballProps = shot.hitWall
+      ? { x: pos.x, y: pos.y + settle * settle * g.goalH * 0.6, scale: pos.scale, spin: game.spin, alpha: 1 - settle * 0.3 }
+      : shot.overBar
       ? { x: pos.x, y: pos.y - settle * g.goalH * 0.12, scale: pos.scale * (1 - settle * 0.5), spin: game.spin, alpha: 1 - settle }
       : ballInNet
         ? { ...ballIntoNet(g, pos, shot.shot.x, shot.shot.y, settle), spin: game.spin, alpha: 1 - settle * 0.25 }
@@ -3801,7 +4329,9 @@ function renderKeeperMode(ctx, g, game) {
     }
   }
 
-  const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.rivalMissed
+  const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.rivalMissed && !shot.hitWall
+  const clamp = shot?.trajClamp ?? 1
+  const arc = shot?.loft != null ? shot.loft * 0.1 : 0
   // Retícula do goleiro: escolhe o ponto do voo até o momento de soltar
   const showReticle = !defense?.released && (phase === 'countdown' || phase === 'windup' || phase === 'flight')
 
@@ -3824,21 +4354,23 @@ function renderKeeperMode(ctx, g, game) {
     drawStriker(ctx, g, { progress: 1, kicking: true, palette: 'rival' })
     // Retícula atrás da bola: escurecer a bola no instante da decisão atrapalha
     if (showReticle) drawKeeperReticle(ctx, g, game, charging, chargePower)
-    const t = Math.min(1, phaseT / shot.duration)
-    const pos = ballFlightPos(g, t, shot.x, shot.y, {})
+    const t = Math.min(1, phaseT / shot.duration) * clamp
+    const pos = ballFlightPos(g, t, shot.x, shot.y, { arcBoost: arc })
     game.spin += 20.4 * dt
     pushTrail(game, pos)
     drawTrail(ctx, game.trail, g)
     drawBall(ctx, { ...pos, spin: game.spin }, g)
   } else if (phase === 'outcome') {
-    const pos = ballFlightPos(g, 1, shot.x, shot.y, {})
+    const pos = ballFlightPos(g, clamp, shot.x, shot.y, { arcBoost: arc })
     const settle = Math.min(1, phaseT / 0.4)
     ctx.save()
     ctx.globalAlpha = 1 - settle
     drawTrail(ctx, game.trail, g)
     ctx.restore()
     const bounceX = shot.saved ? (Math.sign(shot.x) || 1) * settle * g.w * 0.12 : 0
-    const ballProps = ballInNet
+    const ballProps = shot.hitWall
+      ? { x: pos.x, y: pos.y + settle * settle * g.goalH * 0.6, scale: pos.scale, spin: game.spin, alpha: 1 - settle * 0.3 }
+      : ballInNet
       ? { ...ballIntoNet(g, pos, shot.x, shot.y, settle), spin: game.spin, alpha: 1 - settle * 0.25 }
       : {
           x: pos.x + bounceX,
@@ -3880,6 +4412,7 @@ function createHud() {
     screens: {
       menu: el('screen-menu'),
       duel: el('screen-duel'),
+      falta: el('screen-falta'),
       game: el('screen-game'),
       result: el('screen-result'),
     },
@@ -4035,6 +4568,11 @@ const COACH_TIPS = [
   'Defender vale como chutar: segurar bola que ia no ângulo paga 250!',
   'Chute no máximo de força sai um foguete, mas fica mais difícil de colocar no canto.',
   'Sequência de acertos multiplica os pontos: proteja seu combo!',
+  'Na falta, menos força faz a bola subir por cima da barreira e ainda cair no gol.',
+  'Na falta, bomba rasteira no meio morre na barreira: prefira o canto ou o voo alto.',
+  'Cada jogador na barreira adiciona +20 pontos ao seu gol de falta: barreira cheia paga mais!',
+  'De goleiro na falta: barreira pequena deixa a defesa valer muito mais pontos.',
+  'Fique de olho no clima: vento lateral desvia a bola no ar — compense a mira!',
 ]
 
 // Vídeo do mascote com remoção de fundo (chroma key) em tempo real no canvas.
@@ -4147,6 +4685,8 @@ function initMascotVideo({ src = 'assets/video/raposa-comemora.mp4' } = {}) {
 const STORAGE = {
   striker: 'iprachute:best:striker',
   keeper: 'iprachute:best:keeper',
+  faltaStriker: 'iprachute:best:falta-striker',
+  faltaKeeper: 'iprachute:best:falta-keeper',
   muted: 'iprachute:muted',
 }
 
@@ -4166,6 +4706,177 @@ const store = {
       /* modo privado: sem persistência */
     }
   },
+}
+
+// UI de sessão fora do loop: dicas por modo de entrada, recordes do menu,
+// botão de som e a tela de resultado. Extraído do main.js.
+const AIM_HINTS = {
+  tilt: 'Incline para mirar · <b>segure e solte</b> · chacoalhe = especial',
+  touch: 'Arraste para mirar · <b>segure e solte</b> · 2 toques = especial',
+  teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> chuta · <b>X</b> = especial',
+}
+const FALTA_AIM_HINTS = {
+  tilt: 'Menos força passa por cima da barreira · canto com força contorna',
+  touch: 'Arraste a mira · pouca força = por cima · canto forte = contorna',
+  teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> dosa a força do chute',
+}
+const KEEPER_HINTS = {
+  tilt: '<b>Segure a tela</b> para carregar · incline a mira · <b>solte</b> = voo',
+  touch: 'Arraste a mira · <b>segure Defender</b> para carregar · soltar = voo',
+  teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> carrega, soltar = voo · <b>X</b> = finta',
+}
+
+function aimHintFor(inputMode, kind = 'penalty') {
+  const table = kind === 'falta' ? FALTA_AIM_HINTS : AIM_HINTS
+  return table[inputMode] ?? table.touch
+}
+
+function keeperHintFor(inputMode) {
+  return KEEPER_HINTS[inputMode] ?? KEEPER_HINTS.touch
+}
+
+function bestStorageKey(mode, kind) {
+  if (kind === 'falta') return mode === 'striker' ? STORAGE.faltaStriker : STORAGE.faltaKeeper
+  return mode === 'striker' ? STORAGE.striker : STORAGE.keeper
+}
+
+function updateMuteButton(audio) {
+  const btn = document.getElementById('btn-mute')
+  btn.classList.toggle('is-muted', audio.muted)
+  btn.setAttribute('aria-pressed', String(audio.muted))
+}
+
+function refreshMenuBests(hud) {
+  hud.nodes.bestStriker.textContent = String(store.get(STORAGE.striker))
+  hud.nodes.bestKeeper.textContent = String(store.get(STORAGE.keeper))
+  const fs = document.getElementById('best-falta-striker')
+  const fk = document.getElementById('best-falta-keeper')
+  if (fs) fs.textContent = String(store.get(STORAGE.faltaStriker))
+  if (fk) fk.textContent = String(store.get(STORAGE.faltaKeeper))
+}
+
+// Preenche e mostra a tela de resultado; devolve o placar consolidado
+function showSessionResult({ game, hud, audio }) {
+  const finished = finishSession(game.state)
+  const key = bestStorageKey(game.mode, game.kind)
+  const isRecord = finished.score > 0 && finished.score > game.state.best
+  store.set(key, finished.best)
+
+  const striker = game.mode === 'striker'
+  const falta = game.kind === 'falta'
+  hud.nodes.resultEyebrow.textContent = falta
+    ? striker
+      ? 'Cobrança de falta'
+      : 'Falta: fechou o gol'
+    : striker
+      ? 'Fim do treino'
+      : 'Modo goleiro'
+  const great = game.state.hits >= 6
+  hud.nodes.resultTitle.textContent = striker
+    ? great
+      ? falta
+        ? 'Especialista em faltas!'
+        : 'Artilheiro nato!'
+      : 'Treino completo!'
+    : great
+      ? 'Paredão!'
+      : 'Fim do desafio!'
+  hud.nodes.resultTitle.classList.toggle('is-loss', !great)
+  hud.nodes.resultSub.textContent = striker
+    ? `Você marcou ${game.state.hits} ${game.state.hits === 1 ? 'gol' : 'gols'} em ${TOTAL_ROUNDS} bolas.`
+    : `Você levou a melhor em ${game.state.hits} de ${TOTAL_ROUNDS} cobranças.`
+  hud.nodes.resScore.textContent = String(finished.score)
+  hud.nodes.resHits.textContent = String(game.state.hits)
+  hud.nodes.resHitsLabel.textContent = striker ? 'Gols' : 'Defesas'
+  hud.nodes.resCombo.textContent = `x${game.state.maxCombo}`
+  hud.nodes.newRecord.hidden = !isRecord
+  hud.nodes.coachTip.textContent = COACH_TIPS[Math.floor(Math.random() * COACH_TIPS.length)]
+  if (great) audio.whistle()
+  hud.showScreen('result')
+}
+
+// UI da cobrança de falta: tela de escolha de papel, faixa de condições na
+// cena (local, barreira e clima) e o overlay onde o goleiro monta a barreira.
+// Sorteia local + clima da rodada, arma a câmera e anuncia as condições.
+// No modo goleiro a barreira fica pendente (o jogador monta no overlay).
+function beginFaltaRound({ game, hud, resize }) {
+  const spot = sortearFalta({ rngDist: Math.random(), rngLat: Math.random(), rngSide: Math.random() })
+  const clima = sortearClima({ rngKind: Math.random(), rngStrength: Math.random(), rngSide: Math.random() })
+  const wallCount = game.mode === 'striker' ? aiWallCount({ spot, rng: Math.random() }) : null
+  game.falta = { spot, clima, wallCount, view: faltaCameraView(spot) }
+  resize()
+  updateFaltaBanner(game.falta)
+  if (clima.id !== 'limpo') hud.flash(`${clima.emoji} ${clima.nome}!`, 'save')
+}
+
+// Câmera do sorteio: mais longe = gol menor; falta lateral desloca o gol
+function faltaCameraView(spot) {
+  const scale = Math.max(0.72, Math.min(0.95, 1 - (spot.dist - 11) * 0.014))
+  const shiftX = Math.max(-0.14, Math.min(0.14, -spot.lat * 0.011))
+  return { scale, shiftX }
+}
+
+function faltaSpotLabel(spot) {
+  const lado = Math.abs(spot.lat) < 2 ? 'frontal' : spot.lat > 0 ? 'pela direita' : 'pela esquerda'
+  return `${Math.round(spot.dist)}m ${lado}`
+}
+
+function updateFaltaBanner(falta) {
+  const banner = document.getElementById('falta-banner')
+  if (!falta) {
+    banner.hidden = true
+    return
+  }
+  const wall = falta.wallCount ? `🧱 ${falta.wallCount} na barreira` : '🧱 barreira…'
+  banner.innerHTML = `<b>📍 ${faltaSpotLabel(falta.spot)}</b> · ${wall} · <b>${falta.clima.emoji} ${falta.clima.nome}</b>`
+  banner.hidden = false
+}
+
+function showWallPicker(falta, onChoose) {
+  const overlay = document.getElementById('overlay-wall')
+  document.getElementById('wall-spot-info').innerHTML =
+    `Falta <b>${faltaSpotLabel(falta.spot)}</b> · ${falta.clima.emoji} ${falta.clima.nome} — <i>${falta.clima.aviso}</i>` +
+    `<br /><small>Perigo do local: ${100 - faltaSpotBonus(falta.spot)}%. Barreira grande bloqueia mais, mas a sua defesa vale menos pontos.</small>`
+  const row = document.getElementById('wall-buttons')
+  if (!row.childElementCount) {
+    for (let n = WALL_MIN; n <= WALL_MAX; n++) {
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'wall-btn'
+      btn.textContent = String(n)
+      btn.setAttribute('aria-label', `${n} ${n === 1 ? 'jogador' : 'jogadores'} na barreira`)
+      btn.addEventListener('click', () => {
+        overlay.hidden = true
+        row.dataset.chosen = String(n)
+        onChooseRef?.(n)
+      })
+      row.appendChild(btn)
+    }
+  }
+  onChooseRef = onChoose
+  overlay.hidden = false
+}
+let onChooseRef = null
+
+function hideWallPicker() {
+  const overlay = document.getElementById('overlay-wall')
+  if (overlay) overlay.hidden = true
+  onChooseRef = null
+}
+
+// Liga a navegação da tela de falta; devolve nada — main injeta os callbacks
+function initFaltaScreen({ hud, audio, onStart }) {
+  document.getElementById('btn-mode-falta').addEventListener('click', () => {
+    audio.unlock()
+    audio.tap()
+    hud.showScreen('falta')
+  })
+  document.getElementById('btn-falta-back').addEventListener('click', () => {
+    audio.tap()
+    hud.showScreen('menu')
+  })
+  document.getElementById('btn-falta-striker').addEventListener('click', () => onStart('striker'))
+  document.getElementById('btn-falta-keeper').addEventListener('click', () => onStart('keeper'))
 }
 
 // Aviso de sensor bloqueado. O iOS rejeita o pedido sem mostrar prompt quando
@@ -4321,6 +5032,8 @@ let g = geometry(300, 300)
 
 const game = {
   mode: null, // 'striker' | 'keeper'
+  kind: 'penalty', // 'penalty' | 'falta'
+  falta: null, // { spot, clima, wallCount, view } — rodada de falta
   phase: 'menu', // aim | runup | flight | outcome | windup
   phaseT: 0,
   time: 0,
@@ -4351,19 +5064,8 @@ const game = {
 window.__game = game // sonda de depuração (somente leitura)
 
 audio.setMuted(store.get(STORAGE.muted, 0) === 1)
-updateMuteButton()
-
-function updateMuteButton() {
-  const btn = document.getElementById('btn-mute')
-  btn.classList.toggle('is-muted', audio.muted)
-  btn.setAttribute('aria-pressed', String(audio.muted))
-}
-
-function refreshMenuBests() {
-  hud.nodes.bestStriker.textContent = String(store.get(STORAGE.striker))
-  hud.nodes.bestKeeper.textContent = String(store.get(STORAGE.keeper))
-}
-refreshMenuBests()
+updateMuteButton(audio)
+refreshMenuBests(hud)
 
 // ---------- Canvas ----------
 function resizeCanvas() {
@@ -4373,7 +5075,7 @@ function resizeCanvas() {
   canvas.width = Math.round(rect.width * dpr)
   canvas.height = Math.round(rect.height * dpr)
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-  g = geometry(rect.width, rect.height)
+  g = geometry(rect.width, rect.height, game.kind === 'falta' ? game.falta?.view : null)
 }
 new ResizeObserver(resizeCanvas).observe(canvas.parentElement)
 
@@ -4434,9 +5136,16 @@ document.getElementById('btn-calibrate').addEventListener('click', () => {
   }, 120)
 })
 
-document.getElementById('btn-mode-striker').addEventListener('click', () => selectMode('striker'))
-document.getElementById('btn-mode-keeper').addEventListener('click', () => selectMode('keeper'))
+document.getElementById('btn-mode-striker').addEventListener('click', () => {
+  game.kind = 'penalty'
+  selectMode('striker')
+})
+document.getElementById('btn-mode-keeper').addEventListener('click', () => {
+  game.kind = 'penalty'
+  selectMode('keeper')
+})
 document.getElementById('btn-mode-duel').addEventListener('click', () => {
+  game.kind = 'penalty'
   setupTarget = 'lobby'
   selectMode(null)
 })
@@ -4460,7 +5169,7 @@ document.getElementById('btn-mute').addEventListener('click', (event) => {
   if (event.detail > 0) event.currentTarget.blur()
   audio.setMuted(!audio.muted)
   store.set(STORAGE.muted, audio.muted ? 1 : 0)
-  updateMuteButton()
+  updateMuteButton(audio)
   if (!audio.muted) audio.tap()
 })
 
@@ -4468,7 +5177,7 @@ document.getElementById('btn-mute').addEventListener('click', (event) => {
 
 // ---------- Chacoalhada ----------
 tilt.onShake(() => {
-  if (game.mode === 'striker' && game.phase === 'aim') {
+  if (game.mode === 'striker' && game.phase === 'aim' && game.kind !== 'falta') {
     game.special = pickSpecial(Math.random(), game.special?.id ?? null)
     hud.showSpecial(game.special.nome)
     audio.special()
@@ -4511,14 +5220,17 @@ tilt.attachDragArea(canvas.parentElement)
 function goToMenu() {
   game.phase = 'menu'
   game.mode = null
+  game.falta = null
+  updateFaltaBanner(null)
+  hideWallPicker()
   tilt.setDragEnabled(true)
   releaseWakeLock()
-  refreshMenuBests()
+  refreshMenuBests(hud)
   hud.showScreen('menu')
 }
 
 function startSession() {
-  const best = store.get(game.mode === 'striker' ? STORAGE.striker : STORAGE.keeper)
+  const best = store.get(bestStorageKey(game.mode, game.kind))
   game.state = initialScore(best)
   game.aim = { x: 0, y: 0.5 }
   game.aimDeltas = []
@@ -4535,7 +5247,14 @@ function startSession() {
   if (tilt.state.mode === 'tilt') tilt.calibrate()
   acquireWakeLock()
 
-  hud.nodes.gameTitle.textContent = game.mode === 'striker' ? 'Incline para chutar' : 'Modo goleiro'
+  hud.nodes.gameTitle.textContent =
+    game.kind === 'falta'
+      ? game.mode === 'striker'
+        ? 'Cobrança de falta'
+        : 'Falta: feche o gol'
+      : game.mode === 'striker'
+        ? 'Incline para chutar'
+        : 'Modo goleiro'
   hud.setSensorChip(tilt.state.mode)
   hud.setShootVisible(true)
   hud.setShootLabel(game.mode === 'striker' ? 'Segure e solte!' : 'Defender!')
@@ -4560,6 +5279,8 @@ function startRound() {
   hud.setPower(0)
   // Goleiro com sensor: tela inteira é o botão de defesa (sem mira por arrasto)
   tilt.setDragEnabled(!(game.mode === 'keeper' && tilt.state.mode === 'tilt'))
+  if (game.kind === 'falta') beginFaltaRound({ game, hud, resize: resizeCanvas })
+  else game.falta = null
   if (game.mode === 'striker') {
     setPhase('aim')
     game.clockEnd = game.time + SHOT_CLOCK_S
@@ -4578,6 +5299,15 @@ function startRound() {
     hud.setShootEnabled(true)
     hud.setShootLabel('Defender!')
     setKeeperHint()
+    // Falta: o goleiro monta a barreira antes de o relógio andar
+    if (game.kind === 'falta') {
+      showWallPicker(game.falta, (n) => {
+        game.falta = { ...game.falta, wallCount: n }
+        updateFaltaBanner(game.falta)
+        game.clockEnd = game.time + SHOT_CLOCK_S
+        audio.tap()
+      })
+    }
     if (actionInput.isHeld()) {
       game.defense.holding = true
       game.defense.chargeStart = game.time
@@ -4588,23 +5318,8 @@ function startRound() {
   hud.updateHits(game.state, game.mode)
 }
 
-function setAimHint() {
-  const hints = {
-    tilt: 'Incline para mirar · <b>segure e solte</b> · chacoalhe = especial',
-    touch: 'Arraste para mirar · <b>segure e solte</b> · 2 toques = especial',
-    teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> chuta · <b>X</b> = especial',
-  }
-  hud.setHint(hints[tilt.state.mode] ?? hints.touch)
-}
-
-function setKeeperHint() {
-  const hints = {
-    tilt: '<b>Segure a tela</b> para carregar · incline a mira · <b>solte</b> = voo',
-    touch: 'Arraste a mira · <b>segure Defender</b> para carregar · soltar = voo',
-    teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> carrega, soltar = voo · <b>X</b> = finta',
-  }
-  hud.setHint(hints[tilt.state.mode] ?? hints.touch)
-}
+const setAimHint = () => hud.setHint(aimHintFor(tilt.state.mode, game.kind))
+const setKeeperHint = () => hud.setHint(keeperHintFor(tilt.state.mode))
 
 function setPhase(phase) {
   game.phase = phase
@@ -4617,10 +5332,10 @@ function shoot(holdMs) {
   hud.setShootEnabled(false)
   hud.setShootLabel('Chutando…')
 
-  const cavadinha = isCavadinha(holdMs)
+  const cavadinha = game.kind !== 'falta' && isCavadinha(holdMs)
   const power = powerFromHold(holdMs)
-  // Cavadinha cancela o especial armado (sem empilhar bônus de estilo)
-  const special = cavadinha ? null : game.special
+  // Cavadinha cancela o especial armado; na falta a física manda sozinha
+  const special = cavadinha || game.kind === 'falta' ? null : game.special
   const paradinha = special?.id === 'paradinha'
   const runupDuration = paradinha ? PARADINHA_RUNUP_S : RUNUP_S
   const pose = special?.id === 'chaleira' || special?.id === 'calcanhar' ? special.id : 'normal'
@@ -4666,6 +5381,14 @@ function launchStrikerShot() {
     return
   }
   const s = game.shot
+  if (game.kind === 'falta') {
+    const result = faltaStrikerResolve({ aim: s.aim, stability: s.stability, power: s.power, falta: game.falta, rng: Math.random })
+    game.shot = { ...s, ...result, pending: false, from: { x: g.spotX, y: g.spotY } }
+    audio.kick(s.power)
+    navigator.vibrate?.(10 + Math.round(s.power * 20))
+    setPhase('flight')
+    return
+  }
   const result = resolveShot2D({
     aim: s.aim,
     stability: s.stability,
@@ -4693,7 +5416,7 @@ function launchStrikerShot() {
 
 function endStrikerFlight() {
   const { shot } = game
-  const success = !shot.saved && !shot.offTarget
+  const success = !shot.saved && !shot.offTarget && !shot.hitWall
   const gained = success ? shot.points * game.state.combo : 0
   const prevCombo = game.state.combo
   game.state = applyResult(game.state, { success, points: shot.points })
@@ -4717,6 +5440,11 @@ function endStrikerFlight() {
     audio.goal()
     if (game.state.combo > prevCombo) audio.comboUp(game.state.combo)
     navigator.vibrate?.(shot.precise || shot.special ? [30, 40, 60] : 40)
+  } else if (shot.hitWall) {
+    hud.flash('Na barreira!', 'miss')
+    if (!reducedMotion) shake(fx, 5)
+    audio.miss()
+    navigator.vibrate?.([20, 30, 20])
   } else if (shot.saved) {
     hud.flash('Defendeu!', 'save')
     if (!reducedMotion) burst(fx, g.gx(shot.shot.x), g.gy(shot.shot.y), 'save')
@@ -4733,9 +5461,12 @@ function endStrikerFlight() {
 function launchAiShot() {
   const nerveMiss = Math.min(NERVE_CAP, game.provocation.nerve * NERVE_STEP)
   // Duelo: a bola veio do batedor humano; solo: rival controlado pela máquina
-  const shotInfo =
-    game.duelShot ??
-    aiShot2D({
+  let shotInfo = game.duelShot
+  if (!shotInfo && game.kind === 'falta') {
+    shotInfo = faltaAiKick({ falta: game.falta, round: game.state.round, nerveMiss, rng: Math.random })
+  }
+  if (!shotInfo) {
+    shotInfo = aiShot2D({
       round: game.state.round,
       rngX: Math.random(),
       rngY: Math.random(),
@@ -4743,6 +5474,7 @@ function launchAiShot() {
       rngMiss: Math.random(),
       rngPower: Math.random(),
     })
+  }
   game.duelShot = null
   game.shot = { ...shotInfo, from: { x: g.spotX, y: g.spotY } }
   game.kickTime = game.time
@@ -4753,6 +5485,20 @@ function launchAiShot() {
 
 function endKeeperFlight() {
   const { shot, defense } = game
+  if (game.kind === 'falta' && shot.hitWall) {
+    // A barreira que VOCÊ montou salvou: poucos pontos, mas o combo segue
+    const prevCombo = game.state.combo
+    game.state = applyResult(game.state, { success: true, points: FALTA_BLOCK_POINTS })
+    game.shot.saved = false
+    game.shot.rivalMissed = false
+    hud.flash('A barreira salvou!', 'save')
+    if (!reducedMotion) floatText(fx, `+${FALTA_BLOCK_POINTS * prevCombo}`, g.gx(0), g.gy(0.6), '255, 223, 27')
+    audio.save()
+    hud.updateScore(game.state)
+    hud.updateHits(game.state, game.mode)
+    setPhase('outcome')
+    return
+  }
   const result = resolveKeeperDefense({
     released: defense.released,
     // Instante determinístico do cruzamento (sem o overshoot do frame)
@@ -4770,7 +5516,15 @@ function endKeeperFlight() {
   const perfect = saved && result.phase === 'stretched'
   // Defesa paga na MESMA tabela do batedor: segurar bola de ângulo vale 250
   const points = saved
-    ? pointsForPlacement(shot.x, shot.y) + (perfect ? 25 : 0)
+    ? game.kind === 'falta'
+      ? faltaSavePoints({
+          shot: { x: shot.x, y: shot.y },
+          spot: game.falta.spot,
+          wallCount: game.falta.wallCount,
+          clima: game.falta.clima,
+          perfect,
+        })
+      : pointsForPlacement(shot.x, shot.y) + (perfect ? 25 : 0)
     : rivalMissed
       ? PROVOKE_MISS_POINTS
       : 0
@@ -4828,34 +5582,9 @@ function nextRoundOrFinish() {
 }
 
 function finishAndShowResult() {
-  const finished = finishSession(game.state)
-  const key = game.mode === 'striker' ? STORAGE.striker : STORAGE.keeper
-  const isRecord = finished.score > 0 && finished.score > game.state.best
-  store.set(key, finished.best)
-
-  const striker = game.mode === 'striker'
-  hud.nodes.resultEyebrow.textContent = striker ? 'Fim do treino' : 'Modo goleiro'
-  const great = game.state.hits >= 6
-  hud.nodes.resultTitle.textContent = striker
-    ? great
-      ? 'Artilheiro nato!'
-      : 'Treino completo!'
-    : great
-      ? 'Paredão!'
-      : 'Fim do desafio!'
-  hud.nodes.resultTitle.classList.toggle('is-loss', !great)
-  hud.nodes.resultSub.textContent = striker
-    ? `Você marcou ${game.state.hits} ${game.state.hits === 1 ? 'gol' : 'gols'} em ${TOTAL_ROUNDS} bolas.`
-    : `Você levou a melhor em ${game.state.hits} de ${TOTAL_ROUNDS} chutes.`
-  hud.nodes.resScore.textContent = String(finished.score)
-  hud.nodes.resHits.textContent = String(game.state.hits)
-  hud.nodes.resHitsLabel.textContent = striker ? 'Gols' : 'Defesas'
-  hud.nodes.resCombo.textContent = `x${game.state.maxCombo}`
-  hud.nodes.newRecord.hidden = !isRecord
-  hud.nodes.coachTip.textContent = COACH_TIPS[Math.floor(Math.random() * COACH_TIPS.length)]
-  if (great) audio.whistle()
+  showSessionResult({ game, hud, audio })
+  updateFaltaBanner(null)
   releaseWakeLock()
-  hud.showScreen('result')
   game.phase = 'menu'
 }
 
@@ -4927,7 +5656,11 @@ function updateGame(dt) {
 
   game.phaseT += dt
 
-  // Relógio de 5s: batedor tem que bater; goleiro usa para se organizar
+  // Relógio de 5s: batedor tem que bater; goleiro usa para se organizar.
+  // Na falta, o relógio do goleiro só anda depois de a barreira estar montada.
+  if (game.kind === 'falta' && game.phase === 'countdown' && game.falta?.wallCount == null) {
+    game.clockEnd = game.time + SHOT_CLOCK_S
+  }
   if (game.phase === 'aim' || game.phase === 'countdown') {
     const remaining = Math.max(0, Math.ceil(game.clockEnd - game.time))
     hud.setClock(remaining)
@@ -4979,9 +5712,14 @@ function render() {
     showZones: game.mode === 'striker',
   })
 
+  if (game.kind === 'falta' && game.falta?.wallCount) {
+    const jumpT = game.phase === 'flight' ? Math.min(1, game.phaseT / 0.4) : game.phase === 'outcome' ? 1 : 0
+    drawWall(ctx, g, game.falta, { jumpT, time: game.time })
+  }
   if (game.mode === 'striker') renderStriker(ctx, g, game)
   else renderKeeperMode(ctx, g, game)
 
+  if (game.kind === 'falta') drawWeather(ctx, g, game.falta?.clima, game.time, reducedMotion)
   drawFx(ctx, fx)
   drawVignette(ctx, g)
   ctx.restore()
@@ -5010,6 +5748,15 @@ const duelCtl = createDuelController({
   },
 })
 duelCtl.init()
+
+initFaltaScreen({
+  hud,
+  audio,
+  onStart: (role) => {
+    game.kind = 'falta'
+    selectMode(role)
+  },
+})
 
 const actionInput = initActionInput({ game, hud, audio, tilt, shoot: (holdMs) => shoot(holdMs) })
 

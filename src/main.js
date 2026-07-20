@@ -1,6 +1,5 @@
 import { smoothAim, aimStability } from './game/aim.js'
 import {
-  TOTAL_ROUNDS,
   PRECISION_THRESHOLD,
   AIM_LIMIT_X,
   RUNUP_S,
@@ -16,18 +15,23 @@ import { resolveShot2D, keeperDive2D } from './game/shot.js'
 import { pointsForPlacement } from './game/zones.js'
 import { initActionInput } from './input/actions.js'
 import { aiShot2D, aiKickPlan, resolveKeeperDefense } from './game/keeper.js'
-import { initialScore, applyResult, advanceRound, isSessionOver, finishSession } from './game/scoring.js'
+import { initialScore, applyResult, advanceRound, isSessionOver } from './game/scoring.js'
 import { createTiltInput } from './input/tilt.js'
 import { geometry, drawStadium, drawGoalAndZones, drawVignette } from './render/scene.js'
 import { renderStriker, renderKeeperMode } from './render/composer.js'
 import { initSprites } from './render/sprites.js'
 import { createFx, resetFx, burst, floatText, shake, ripple, updateFx, shakeOffset, drawFx } from './render/fx.js'
-import { createHud, COACH_TIPS } from './ui/hud.js'
+import { createHud } from './ui/hud.js'
 import { initMascotVideo } from './ui/chroma.js'
 import { store, STORAGE } from './ui/store.js'
 import { showPermissionBlocked } from './ui/permission.js'
 import { createAudio } from './audio.js'
 import { createDuelController } from './net/controller.js'
+import { faltaStrikerResolve, faltaAiKick, faltaSavePoints, FALTA_BLOCK_POINTS } from './game/freekick.js'
+import { drawWall } from './render/wall.js'
+import { drawWeather } from './render/weather.js'
+import { beginFaltaRound, updateFaltaBanner, showWallPicker, hideWallPicker, initFaltaScreen } from './ui/falta-ui.js'
+import { aimHintFor, keeperHintFor, bestStorageKey, updateMuteButton, refreshMenuBests, showSessionResult } from './ui/session-ui.js'
 
 const AIM_SMOOTH = 0.16 // fração de convergência por frame de 60 fps
 const DELTA_WINDOW = 12
@@ -51,6 +55,8 @@ let g = geometry(300, 300)
 
 const game = {
   mode: null, // 'striker' | 'keeper'
+  kind: 'penalty', // 'penalty' | 'falta'
+  falta: null, // { spot, clima, wallCount, view } — rodada de falta
   phase: 'menu', // aim | runup | flight | outcome | windup
   phaseT: 0,
   time: 0,
@@ -81,19 +87,8 @@ const game = {
 window.__game = game // sonda de depuração (somente leitura)
 
 audio.setMuted(store.get(STORAGE.muted, 0) === 1)
-updateMuteButton()
-
-function updateMuteButton() {
-  const btn = document.getElementById('btn-mute')
-  btn.classList.toggle('is-muted', audio.muted)
-  btn.setAttribute('aria-pressed', String(audio.muted))
-}
-
-function refreshMenuBests() {
-  hud.nodes.bestStriker.textContent = String(store.get(STORAGE.striker))
-  hud.nodes.bestKeeper.textContent = String(store.get(STORAGE.keeper))
-}
-refreshMenuBests()
+updateMuteButton(audio)
+refreshMenuBests(hud)
 
 // ---------- Canvas ----------
 function resizeCanvas() {
@@ -103,7 +98,7 @@ function resizeCanvas() {
   canvas.width = Math.round(rect.width * dpr)
   canvas.height = Math.round(rect.height * dpr)
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-  g = geometry(rect.width, rect.height)
+  g = geometry(rect.width, rect.height, game.kind === 'falta' ? game.falta?.view : null)
 }
 new ResizeObserver(resizeCanvas).observe(canvas.parentElement)
 
@@ -164,9 +159,16 @@ document.getElementById('btn-calibrate').addEventListener('click', () => {
   }, 120)
 })
 
-document.getElementById('btn-mode-striker').addEventListener('click', () => selectMode('striker'))
-document.getElementById('btn-mode-keeper').addEventListener('click', () => selectMode('keeper'))
+document.getElementById('btn-mode-striker').addEventListener('click', () => {
+  game.kind = 'penalty'
+  selectMode('striker')
+})
+document.getElementById('btn-mode-keeper').addEventListener('click', () => {
+  game.kind = 'penalty'
+  selectMode('keeper')
+})
 document.getElementById('btn-mode-duel').addEventListener('click', () => {
+  game.kind = 'penalty'
   setupTarget = 'lobby'
   selectMode(null)
 })
@@ -190,7 +192,7 @@ document.getElementById('btn-mute').addEventListener('click', (event) => {
   if (event.detail > 0) event.currentTarget.blur()
   audio.setMuted(!audio.muted)
   store.set(STORAGE.muted, audio.muted ? 1 : 0)
-  updateMuteButton()
+  updateMuteButton(audio)
   if (!audio.muted) audio.tap()
 })
 
@@ -198,7 +200,7 @@ document.getElementById('btn-mute').addEventListener('click', (event) => {
 
 // ---------- Chacoalhada ----------
 tilt.onShake(() => {
-  if (game.mode === 'striker' && game.phase === 'aim') {
+  if (game.mode === 'striker' && game.phase === 'aim' && game.kind !== 'falta') {
     game.special = pickSpecial(Math.random(), game.special?.id ?? null)
     hud.showSpecial(game.special.nome)
     audio.special()
@@ -241,14 +243,17 @@ tilt.attachDragArea(canvas.parentElement)
 function goToMenu() {
   game.phase = 'menu'
   game.mode = null
+  game.falta = null
+  updateFaltaBanner(null)
+  hideWallPicker()
   tilt.setDragEnabled(true)
   releaseWakeLock()
-  refreshMenuBests()
+  refreshMenuBests(hud)
   hud.showScreen('menu')
 }
 
 function startSession() {
-  const best = store.get(game.mode === 'striker' ? STORAGE.striker : STORAGE.keeper)
+  const best = store.get(bestStorageKey(game.mode, game.kind))
   game.state = initialScore(best)
   game.aim = { x: 0, y: 0.5 }
   game.aimDeltas = []
@@ -265,7 +270,14 @@ function startSession() {
   if (tilt.state.mode === 'tilt') tilt.calibrate()
   acquireWakeLock()
 
-  hud.nodes.gameTitle.textContent = game.mode === 'striker' ? 'Incline para chutar' : 'Modo goleiro'
+  hud.nodes.gameTitle.textContent =
+    game.kind === 'falta'
+      ? game.mode === 'striker'
+        ? 'Cobrança de falta'
+        : 'Falta: feche o gol'
+      : game.mode === 'striker'
+        ? 'Incline para chutar'
+        : 'Modo goleiro'
   hud.setSensorChip(tilt.state.mode)
   hud.setShootVisible(true)
   hud.setShootLabel(game.mode === 'striker' ? 'Segure e solte!' : 'Defender!')
@@ -290,6 +302,8 @@ function startRound() {
   hud.setPower(0)
   // Goleiro com sensor: tela inteira é o botão de defesa (sem mira por arrasto)
   tilt.setDragEnabled(!(game.mode === 'keeper' && tilt.state.mode === 'tilt'))
+  if (game.kind === 'falta') beginFaltaRound({ game, hud, resize: resizeCanvas })
+  else game.falta = null
   if (game.mode === 'striker') {
     setPhase('aim')
     game.clockEnd = game.time + SHOT_CLOCK_S
@@ -308,6 +322,15 @@ function startRound() {
     hud.setShootEnabled(true)
     hud.setShootLabel('Defender!')
     setKeeperHint()
+    // Falta: o goleiro monta a barreira antes de o relógio andar
+    if (game.kind === 'falta') {
+      showWallPicker(game.falta, (n) => {
+        game.falta = { ...game.falta, wallCount: n }
+        updateFaltaBanner(game.falta)
+        game.clockEnd = game.time + SHOT_CLOCK_S
+        audio.tap()
+      })
+    }
     if (actionInput.isHeld()) {
       game.defense.holding = true
       game.defense.chargeStart = game.time
@@ -318,23 +341,8 @@ function startRound() {
   hud.updateHits(game.state, game.mode)
 }
 
-function setAimHint() {
-  const hints = {
-    tilt: 'Incline para mirar · <b>segure e solte</b> · chacoalhe = especial',
-    touch: 'Arraste para mirar · <b>segure e solte</b> · 2 toques = especial',
-    teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> chuta · <b>X</b> = especial',
-  }
-  hud.setHint(hints[tilt.state.mode] ?? hints.touch)
-}
-
-function setKeeperHint() {
-  const hints = {
-    tilt: '<b>Segure a tela</b> para carregar · incline a mira · <b>solte</b> = voo',
-    touch: 'Arraste a mira · <b>segure Defender</b> para carregar · soltar = voo',
-    teclado: '<b>← → ↑ ↓</b> miram · <b>espaço</b> carrega, soltar = voo · <b>X</b> = finta',
-  }
-  hud.setHint(hints[tilt.state.mode] ?? hints.touch)
-}
+const setAimHint = () => hud.setHint(aimHintFor(tilt.state.mode, game.kind))
+const setKeeperHint = () => hud.setHint(keeperHintFor(tilt.state.mode))
 
 function setPhase(phase) {
   game.phase = phase
@@ -347,10 +355,10 @@ function shoot(holdMs) {
   hud.setShootEnabled(false)
   hud.setShootLabel('Chutando…')
 
-  const cavadinha = isCavadinha(holdMs)
+  const cavadinha = game.kind !== 'falta' && isCavadinha(holdMs)
   const power = powerFromHold(holdMs)
-  // Cavadinha cancela o especial armado (sem empilhar bônus de estilo)
-  const special = cavadinha ? null : game.special
+  // Cavadinha cancela o especial armado; na falta a física manda sozinha
+  const special = cavadinha || game.kind === 'falta' ? null : game.special
   const paradinha = special?.id === 'paradinha'
   const runupDuration = paradinha ? PARADINHA_RUNUP_S : RUNUP_S
   const pose = special?.id === 'chaleira' || special?.id === 'calcanhar' ? special.id : 'normal'
@@ -396,6 +404,14 @@ function launchStrikerShot() {
     return
   }
   const s = game.shot
+  if (game.kind === 'falta') {
+    const result = faltaStrikerResolve({ aim: s.aim, stability: s.stability, power: s.power, falta: game.falta, rng: Math.random })
+    game.shot = { ...s, ...result, pending: false, from: { x: g.spotX, y: g.spotY } }
+    audio.kick(s.power)
+    navigator.vibrate?.(10 + Math.round(s.power * 20))
+    setPhase('flight')
+    return
+  }
   const result = resolveShot2D({
     aim: s.aim,
     stability: s.stability,
@@ -423,7 +439,7 @@ function launchStrikerShot() {
 
 function endStrikerFlight() {
   const { shot } = game
-  const success = !shot.saved && !shot.offTarget
+  const success = !shot.saved && !shot.offTarget && !shot.hitWall
   const gained = success ? shot.points * game.state.combo : 0
   const prevCombo = game.state.combo
   game.state = applyResult(game.state, { success, points: shot.points })
@@ -447,6 +463,11 @@ function endStrikerFlight() {
     audio.goal()
     if (game.state.combo > prevCombo) audio.comboUp(game.state.combo)
     navigator.vibrate?.(shot.precise || shot.special ? [30, 40, 60] : 40)
+  } else if (shot.hitWall) {
+    hud.flash('Na barreira!', 'miss')
+    if (!reducedMotion) shake(fx, 5)
+    audio.miss()
+    navigator.vibrate?.([20, 30, 20])
   } else if (shot.saved) {
     hud.flash('Defendeu!', 'save')
     if (!reducedMotion) burst(fx, g.gx(shot.shot.x), g.gy(shot.shot.y), 'save')
@@ -463,9 +484,12 @@ function endStrikerFlight() {
 function launchAiShot() {
   const nerveMiss = Math.min(NERVE_CAP, game.provocation.nerve * NERVE_STEP)
   // Duelo: a bola veio do batedor humano; solo: rival controlado pela máquina
-  const shotInfo =
-    game.duelShot ??
-    aiShot2D({
+  let shotInfo = game.duelShot
+  if (!shotInfo && game.kind === 'falta') {
+    shotInfo = faltaAiKick({ falta: game.falta, round: game.state.round, nerveMiss, rng: Math.random })
+  }
+  if (!shotInfo) {
+    shotInfo = aiShot2D({
       round: game.state.round,
       rngX: Math.random(),
       rngY: Math.random(),
@@ -473,6 +497,7 @@ function launchAiShot() {
       rngMiss: Math.random(),
       rngPower: Math.random(),
     })
+  }
   game.duelShot = null
   game.shot = { ...shotInfo, from: { x: g.spotX, y: g.spotY } }
   game.kickTime = game.time
@@ -483,6 +508,20 @@ function launchAiShot() {
 
 function endKeeperFlight() {
   const { shot, defense } = game
+  if (game.kind === 'falta' && shot.hitWall) {
+    // A barreira que VOCÊ montou salvou: poucos pontos, mas o combo segue
+    const prevCombo = game.state.combo
+    game.state = applyResult(game.state, { success: true, points: FALTA_BLOCK_POINTS })
+    game.shot.saved = false
+    game.shot.rivalMissed = false
+    hud.flash('A barreira salvou!', 'save')
+    if (!reducedMotion) floatText(fx, `+${FALTA_BLOCK_POINTS * prevCombo}`, g.gx(0), g.gy(0.6), '255, 223, 27')
+    audio.save()
+    hud.updateScore(game.state)
+    hud.updateHits(game.state, game.mode)
+    setPhase('outcome')
+    return
+  }
   const result = resolveKeeperDefense({
     released: defense.released,
     // Instante determinístico do cruzamento (sem o overshoot do frame)
@@ -500,7 +539,15 @@ function endKeeperFlight() {
   const perfect = saved && result.phase === 'stretched'
   // Defesa paga na MESMA tabela do batedor: segurar bola de ângulo vale 250
   const points = saved
-    ? pointsForPlacement(shot.x, shot.y) + (perfect ? 25 : 0)
+    ? game.kind === 'falta'
+      ? faltaSavePoints({
+          shot: { x: shot.x, y: shot.y },
+          spot: game.falta.spot,
+          wallCount: game.falta.wallCount,
+          clima: game.falta.clima,
+          perfect,
+        })
+      : pointsForPlacement(shot.x, shot.y) + (perfect ? 25 : 0)
     : rivalMissed
       ? PROVOKE_MISS_POINTS
       : 0
@@ -558,34 +605,9 @@ function nextRoundOrFinish() {
 }
 
 function finishAndShowResult() {
-  const finished = finishSession(game.state)
-  const key = game.mode === 'striker' ? STORAGE.striker : STORAGE.keeper
-  const isRecord = finished.score > 0 && finished.score > game.state.best
-  store.set(key, finished.best)
-
-  const striker = game.mode === 'striker'
-  hud.nodes.resultEyebrow.textContent = striker ? 'Fim do treino' : 'Modo goleiro'
-  const great = game.state.hits >= 6
-  hud.nodes.resultTitle.textContent = striker
-    ? great
-      ? 'Artilheiro nato!'
-      : 'Treino completo!'
-    : great
-      ? 'Paredão!'
-      : 'Fim do desafio!'
-  hud.nodes.resultTitle.classList.toggle('is-loss', !great)
-  hud.nodes.resultSub.textContent = striker
-    ? `Você marcou ${game.state.hits} ${game.state.hits === 1 ? 'gol' : 'gols'} em ${TOTAL_ROUNDS} bolas.`
-    : `Você levou a melhor em ${game.state.hits} de ${TOTAL_ROUNDS} chutes.`
-  hud.nodes.resScore.textContent = String(finished.score)
-  hud.nodes.resHits.textContent = String(game.state.hits)
-  hud.nodes.resHitsLabel.textContent = striker ? 'Gols' : 'Defesas'
-  hud.nodes.resCombo.textContent = `x${game.state.maxCombo}`
-  hud.nodes.newRecord.hidden = !isRecord
-  hud.nodes.coachTip.textContent = COACH_TIPS[Math.floor(Math.random() * COACH_TIPS.length)]
-  if (great) audio.whistle()
+  showSessionResult({ game, hud, audio })
+  updateFaltaBanner(null)
   releaseWakeLock()
-  hud.showScreen('result')
   game.phase = 'menu'
 }
 
@@ -657,7 +679,11 @@ function updateGame(dt) {
 
   game.phaseT += dt
 
-  // Relógio de 5s: batedor tem que bater; goleiro usa para se organizar
+  // Relógio de 5s: batedor tem que bater; goleiro usa para se organizar.
+  // Na falta, o relógio do goleiro só anda depois de a barreira estar montada.
+  if (game.kind === 'falta' && game.phase === 'countdown' && game.falta?.wallCount == null) {
+    game.clockEnd = game.time + SHOT_CLOCK_S
+  }
   if (game.phase === 'aim' || game.phase === 'countdown') {
     const remaining = Math.max(0, Math.ceil(game.clockEnd - game.time))
     hud.setClock(remaining)
@@ -709,9 +735,14 @@ function render() {
     showZones: game.mode === 'striker',
   })
 
+  if (game.kind === 'falta' && game.falta?.wallCount) {
+    const jumpT = game.phase === 'flight' ? Math.min(1, game.phaseT / 0.4) : game.phase === 'outcome' ? 1 : 0
+    drawWall(ctx, g, game.falta, { jumpT, time: game.time })
+  }
   if (game.mode === 'striker') renderStriker(ctx, g, game)
   else renderKeeperMode(ctx, g, game)
 
+  if (game.kind === 'falta') drawWeather(ctx, g, game.falta?.clima, game.time, reducedMotion)
   drawFx(ctx, fx)
   drawVignette(ctx, g)
   ctx.restore()
@@ -740,6 +771,15 @@ const duelCtl = createDuelController({
   },
 })
 duelCtl.init()
+
+initFaltaScreen({
+  hud,
+  audio,
+  onStart: (role) => {
+    game.kind = 'falta'
+    selectMode(role)
+  },
+})
 
 const actionInput = initActionInput({ game, hud, audio, tilt, shoot: (holdMs) => shoot(holdMs) })
 

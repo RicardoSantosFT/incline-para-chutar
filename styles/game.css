@@ -679,3 +679,72 @@
   .menu-mascot { width: 92px; }
   .gp-dots { height: 26px; }
 }
+
+/* ===== Cobrança de falta ===== */
+.cta--gold {
+  background: linear-gradient(160deg, #ffe9a3, #ffce3d 55%, #e0a114);
+  color: #3a2703;
+  box-shadow: 0 10px 26px rgba(255, 206, 61, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.best-card--gold { border-color: rgba(255, 206, 61, 0.45); }
+.best-card--gold h3 { color: #ffce3d; }
+
+.falta-intro { display: flex; flex-direction: column; gap: 14px; padding: 4px 2px 14px; }
+.falta-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(10, 28, 58, 0.55);
+  border: 1px solid rgba(82, 132, 223, 0.28);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #c9d4ea;
+}
+.falta-rules b { color: #eaf2ff; }
+
+.falta-banner {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  max-width: 68%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(4, 14, 34, 0.78);
+  border: 1px solid rgba(120, 243, 63, 0.35);
+  color: #dbe7ff;
+  font-size: 11.5px;
+  line-height: 1.35;
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+.falta-banner b { color: #b9f68f; font-weight: 800; }
+
+.wall-buttons {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 7px;
+  width: 100%;
+  margin-top: 4px;
+}
+.wall-btn {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 1.5px solid rgba(120, 243, 63, 0.4);
+  background: rgba(16, 44, 88, 0.7);
+  color: #eaf2ff;
+  font-size: 19px;
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+.wall-btn:active { transform: scale(0.92); }
+.wall-btn:focus-visible { outline: 2px solid #78f33f; outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .wall-btn:hover { background: rgba(46, 96, 168, 0.8); border-color: #78f33f; transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wall-btn, .cta--gold { transition: none; }
+}

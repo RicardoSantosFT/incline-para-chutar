@@ -7,6 +7,7 @@ export function createHud() {
     screens: {
       menu: el('screen-menu'),
       duel: el('screen-duel'),
+      falta: el('screen-falta'),
       game: el('screen-game'),
       result: el('screen-result'),
     },
@@ -162,4 +163,9 @@ export const COACH_TIPS = [
   'Defender vale como chutar: segurar bola que ia no ângulo paga 250!',
   'Chute no máximo de força sai um foguete, mas fica mais difícil de colocar no canto.',
   'Sequência de acertos multiplica os pontos: proteja seu combo!',
+  'Na falta, menos força faz a bola subir por cima da barreira e ainda cair no gol.',
+  'Na falta, bomba rasteira no meio morre na barreira: prefira o canto ou o voo alto.',
+  'Cada jogador na barreira adiciona +20 pontos ao seu gol de falta: barreira cheia paga mais!',
+  'De goleiro na falta: barreira pequena deixa a defesa valer muito mais pontos.',
+  'Fique de olho no clima: vento lateral desvia a bola no ar — compense a mira!',
 ]
