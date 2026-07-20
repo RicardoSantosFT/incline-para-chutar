@@ -8,16 +8,24 @@ export const ZONES = [
   { id: 'direita', from: 1 / 3, to: 1 },
 ]
 
-export const ZONE_GRID = {
-  'alto-esquerda': 200,
-  'alto-centro': 150,
-  'alto-direita': 200,
-  'meio-esquerda': 100,
-  'meio-centro': 50,
-  'meio-direita': 100,
-  'baixo-esquerda': 125,
-  'baixo-centro': 75,
-  'baixo-direita': 125,
+// 6 colunas: trave-esq | meia-esq | centro-esq | centro-dir | meia-dir | trave-dir
+export const GRID_COLS = ['trave-esq', 'meia-esq', 'centro-esq', 'centro-dir', 'meia-dir', 'trave-dir']
+const ROW_POINTS = {
+  alto: { trave: 250, meia: 175, centro: 150 },
+  meio: { trave: 150, meia: 100, centro: 50 },
+  baixo: { trave: 175, meia: 125, centro: 75 },
+}
+export const ZONE_GRID = {}
+for (const [row, byCol] of Object.entries(ROW_POINTS)) {
+  for (const col of GRID_COLS) {
+    ZONE_GRID[`${row}-${col}`] = byCol[col.replace(/-esq|-dir/, '')]
+  }
+}
+
+const gridColFor = (x) => {
+  const clamped = Math.max(-1, Math.min(1, x))
+  const index = Math.min(GRID_COLS.length - 1, Math.max(0, Math.floor((clamped + 1) * 3)))
+  return GRID_COLS[index]
 }
 
 const colFor = (x) => {
@@ -44,7 +52,7 @@ export function zoneCenter(id) {
 }
 
 export function zoneIdForPlacement(x, y) {
-  return `${rowFor(y)}-${colFor(x)}`
+  return `${rowFor(y)}-${gridColFor(x)}`
 }
 
 export function pointsForPlacement(x, y) {

@@ -68,6 +68,10 @@
   display: grid;
   grid-template-columns: 1fr 1.1fr 1fr;
   gap: 5px;
+}
+.goal-preview__frame--grid6 {
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
   border: 3px solid #e8f2ff;
   border-bottom: 0;
   border-radius: 6px 6px 0 0;
@@ -82,6 +86,11 @@
   border-radius: 7px;
   font-size: 15px; font-weight: 900; font-style: italic;
   position: relative;
+}
+.goal-preview__frame--grid6 .gp-zone {
+  min-height: 30px;
+  font-size: 11.5px;
+  border-radius: 5px;
 }
 .gp-zone--hot {
   color: var(--green);
@@ -645,6 +654,5 @@
 @media (max-height: 620px) {
   .menu-header { min-height: 84px; }
   .menu-mascot { width: 92px; }
-  .gp-zone { min-height: 52px; }
   .gp-dots { height: 26px; }
 }

@@ -132,7 +132,8 @@ export function createHud() {
 export const COACH_TIPS = [
   'Incline devagar para ter mais controle: agora a mira é livre, dá até para isolar!',
   'O arco da retícula mostra sua estabilidade: espere ele fechar antes de chutar.',
-  'O ângulo vale 200, mas é onde mais se isola — mão firme e força na medida.',
+  'Colado no ângulo vale 250, mas é onde mais se isola — mão firme e força na medida.',
+  'Junto à trave sempre paga mais que no miolo: arrisque o canto quando a mão firmar.',
   'Meia altura no centro é altura de goleiro: vale só 50. Fuja dela!',
   'Segure o botão para dar força. Toque curtinho é cavadinha: humilha goleiro que pulou!',
   'Chacoalhe o celular antes de bater para armar um golpe especial.',

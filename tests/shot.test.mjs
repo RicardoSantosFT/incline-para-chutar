@@ -128,11 +128,11 @@ test('gol de especial soma o bônus de estilo (baixo-centro vale 75)', () => {
     keeper: KEEPER_FAR,
     ...NO_SPREAD,
   })
-  assert.equal(r.zoneId, 'baixo-centro')
+  assert.equal(r.zoneId, 'baixo-centro-dir')
   assert.equal(r.points, 75 + PRECISION_BONUS + chaleira.style)
 })
 
-test('gol no ângulo informa a área e paga 200', () => {
+test('gol colado no ângulo informa a área e paga 250', () => {
   const r = resolveShot2D({
     aim: { x: 0.85, y: 0.88 },
     stability: 1,
@@ -140,8 +140,8 @@ test('gol no ângulo informa a área e paga 200', () => {
     keeper: { x: -2 / 3, y: 0.25 },
     ...NO_SPREAD,
   })
-  assert.equal(r.zoneId, 'alto-direita')
-  assert.equal(r.points, 200 + PRECISION_BONUS)
+  assert.equal(r.zoneId, 'alto-trave-dir')
+  assert.equal(r.points, 250 + PRECISION_BONUS)
 })
 
 test('goleiro comprometido pela paradinha quase não alcança', () => {

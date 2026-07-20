@@ -208,6 +208,10 @@ img { max-width: 100%; height: auto; }
   display: grid;
   grid-template-columns: 1fr 1.1fr 1fr;
   gap: 5px;
+}
+.goal-preview__frame--grid6 {
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
   border: 3px solid #e8f2ff;
   border-bottom: 0;
   border-radius: 6px 6px 0 0;
@@ -222,6 +226,11 @@ img { max-width: 100%; height: auto; }
   border-radius: 7px;
   font-size: 15px; font-weight: 900; font-style: italic;
   position: relative;
+}
+.goal-preview__frame--grid6 .gp-zone {
+  min-height: 30px;
+  font-size: 11.5px;
+  border-radius: 5px;
 }
 .gp-zone--hot {
   color: var(--green);
@@ -785,7 +794,6 @@ img { max-width: 100%; height: auto; }
 @media (max-height: 620px) {
   .menu-header { min-height: 84px; }
   .menu-mascot { width: 92px; }
-  .gp-zone { min-height: 52px; }
   .gp-dots { height: 26px; }
 }
 
@@ -812,16 +820,25 @@ img { max-width: 100%; height: auto; }
         <p class="menu-sub">Incline para <b>mirar em qualquer canto</b>, segure o botão para dar <b>força</b> e chacoalhe para o <b>golpe especial</b>!</p>
 
         <div class="goal-preview" aria-hidden="true">
-          <div class="goal-preview__frame goal-preview__frame--grid">
-            <span class="gp-zone gp-zone--hot">200</span>
-            <span class="gp-zone gp-zone--warm">150</span>
-            <span class="gp-zone gp-zone--hot">200</span>
+          <div class="goal-preview__frame goal-preview__frame--grid6">
+            <span class="gp-zone gp-zone--hot">250</span>
+            <span class="gp-zone gp-zone--warm">175</span>
+            <span class="gp-zone gp-zone--mid">150</span>
+            <span class="gp-zone gp-zone--mid">150</span>
+            <span class="gp-zone gp-zone--warm">175</span>
+            <span class="gp-zone gp-zone--hot">250</span>
+            <span class="gp-zone gp-zone--mid">150</span>
             <span class="gp-zone gp-zone--side">100</span>
             <span class="gp-zone gp-zone--cold">50</span>
+            <span class="gp-zone gp-zone--cold">50</span>
             <span class="gp-zone gp-zone--side">100</span>
-            <span class="gp-zone gp-zone--mid">125</span>
+            <span class="gp-zone gp-zone--mid">150</span>
+            <span class="gp-zone gp-zone--warm">175</span>
+            <span class="gp-zone gp-zone--side">125</span>
             <span class="gp-zone gp-zone--cool">75</span>
-            <span class="gp-zone gp-zone--mid">125</span>
+            <span class="gp-zone gp-zone--cool">75</span>
+            <span class="gp-zone gp-zone--side">125</span>
+            <span class="gp-zone gp-zone--warm">175</span>
           </div>
           <div class="gp-dots"></div>
           <div class="gp-ball"></div>
@@ -844,7 +861,7 @@ img { max-width: 100%; height: auto; }
         </ul>
         <p class="hint-note">
           <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 10.6v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.15" fill="currentColor"/></svg>
-          Toque curtinho = cavadinha · ângulo vale 200 · mira livre (dá até pra isolar!)
+          Toque curtinho = cavadinha · colado no ângulo vale 250 · mira livre (dá até pra isolar!)
         </p>
 
         <div class="best-row">
@@ -1179,16 +1196,24 @@ const ZONES = [
   { id: 'direita', from: 1 / 3, to: 1 },
 ]
 
-const ZONE_GRID = {
-  'alto-esquerda': 200,
-  'alto-centro': 150,
-  'alto-direita': 200,
-  'meio-esquerda': 100,
-  'meio-centro': 50,
-  'meio-direita': 100,
-  'baixo-esquerda': 125,
-  'baixo-centro': 75,
-  'baixo-direita': 125,
+// 6 colunas: trave-esq | meia-esq | centro-esq | centro-dir | meia-dir | trave-dir
+const GRID_COLS = ['trave-esq', 'meia-esq', 'centro-esq', 'centro-dir', 'meia-dir', 'trave-dir']
+const ROW_POINTS = {
+  alto: { trave: 250, meia: 175, centro: 150 },
+  meio: { trave: 150, meia: 100, centro: 50 },
+  baixo: { trave: 175, meia: 125, centro: 75 },
+}
+const ZONE_GRID = {}
+for (const [row, byCol] of Object.entries(ROW_POINTS)) {
+  for (const col of GRID_COLS) {
+    ZONE_GRID[`${row}-${col}`] = byCol[col.replace(/-esq|-dir/, '')]
+  }
+}
+
+const gridColFor = (x) => {
+  const clamped = Math.max(-1, Math.min(1, x))
+  const index = Math.min(GRID_COLS.length - 1, Math.max(0, Math.floor((clamped + 1) * 3)))
+  return GRID_COLS[index]
 }
 
 const colFor = (x) => {
@@ -1215,7 +1240,7 @@ function zoneCenter(id) {
 }
 
 function zoneIdForPlacement(x, y) {
-  return `${rowFor(y)}-${colFor(x)}`
+  return `${rowFor(y)}-${gridColFor(x)}`
 }
 
 function pointsForPlacement(x, y) {
@@ -2709,32 +2734,30 @@ function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = null, show
   ctx.fillStyle = gradientsFor(ctx, g).inner
   ctx.fillRect(innerLeft, g.crossbarY, innerW, g.goalH)
 
-  // Grade 3×3 de pontuação: cor e brilho por valor (dificuldade estatística)
+  // Grade 6×3 de pontuação: cor e brilho por valor (dificuldade estatística)
   if (showZones) {
-    const cols = [
-      ['esquerda', -1, -1 / 3],
-      ['centro', -1 / 3, 1 / 3],
-      ['direita', 1 / 3, 1],
-    ]
     const rows = [
       ['alto', 2 / 3, 1],
       ['meio', 1 / 3, 2 / 3],
       ['baixo', 0, 1 / 3],
     ]
     const TIER_COLORS = {
-      200: ['120, 243, 63', 0.3],
-      150: ['120, 243, 63', 0.18],
-      125: ['167, 139, 250', 0.26],
-      100: ['167, 139, 250', 0.16],
-      75: ['37, 168, 255', 0.16],
-      50: ['37, 168, 255', 0.09],
+      250: ['120, 243, 63', 0.32],
+      175: ['120, 243, 63', 0.17],
+      150: ['167, 139, 250', 0.26],
+      125: ['167, 139, 250', 0.18],
+      100: ['167, 139, 250', 0.12],
+      75: ['37, 168, 255', 0.14],
+      50: ['37, 168, 255', 0.08],
     }
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    const pad = innerW * 0.006
+    const pad = innerW * 0.005
     for (const [rowId, y0, y1] of rows) {
-      for (const [colId, x0, x1] of cols) {
-        const id = `${rowId}-${colId}`
+      for (let c = 0; c < GRID_COLS.length; c++) {
+        const x0 = -1 + c / 3
+        const x1 = x0 + 1 / 3
+        const id = `${rowId}-${GRID_COLS[c]}`
         const points = ZONE_GRID[id]
         const [color, baseAlpha] = TIER_COLORS[points]
         const zx = g.gx(x0)
@@ -2744,11 +2767,11 @@ function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = null, show
         const isHot = highlight === id
         ctx.fillStyle = `rgba(${color}, ${isHot ? 0.5 : baseAlpha})`
         ctx.fillRect(zx + pad, zy + pad, zw - pad * 2, zh - pad * 2)
-        ctx.strokeStyle = `rgba(${color}, ${isHot ? 0.95 : 0.4})`
+        ctx.strokeStyle = `rgba(${color}, ${isHot ? 0.95 : 0.35})`
         ctx.lineWidth = isHot ? 2.5 : 1
         ctx.strokeRect(zx + pad, zy + pad, zw - pad * 2, zh - pad * 2)
-        ctx.font = `italic 900 ${g.goalH * 0.11}px Inter, sans-serif`
-        ctx.fillStyle = `rgba(${color}, ${isHot ? 1 : 0.85})`
+        ctx.font = `italic 900 ${g.goalH * 0.085}px Inter, sans-serif`
+        ctx.fillStyle = `rgba(${color}, ${isHot ? 1 : 0.8})`
         if (isHot) {
           ctx.shadowColor = `rgba(${color}, 0.8)`
           ctx.shadowBlur = 16
@@ -3711,7 +3734,8 @@ function createHud() {
 const COACH_TIPS = [
   'Incline devagar para ter mais controle: agora a mira é livre, dá até para isolar!',
   'O arco da retícula mostra sua estabilidade: espere ele fechar antes de chutar.',
-  'O ângulo vale 200, mas é onde mais se isola — mão firme e força na medida.',
+  'Colado no ângulo vale 250, mas é onde mais se isola — mão firme e força na medida.',
+  'Junto à trave sempre paga mais que no miolo: arrisque o canto quando a mão firmar.',
   'Meia altura no centro é altura de goleiro: vale só 50. Fuja dela!',
   'Segure o botão para dar força. Toque curtinho é cavadinha: humilha goleiro que pulou!',
   'Chacoalhe o celular antes de bater para armar um golpe especial.',

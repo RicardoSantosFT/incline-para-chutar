@@ -1,6 +1,6 @@
 // Cenário: estádio noturno, torcida, placas, gramado e gol com a grade 3×3.
 // Todas as funções recebem a geometria `g` calculada a partir do tamanho do canvas.
-import { ZONE_GRID } from '../game/zones.js'
+import { ZONE_GRID, GRID_COLS } from '../game/zones.js'
 
 export function geometry(w, h) {
   const goalW = w * 0.76
@@ -231,32 +231,30 @@ export function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = nul
   ctx.fillStyle = gradientsFor(ctx, g).inner
   ctx.fillRect(innerLeft, g.crossbarY, innerW, g.goalH)
 
-  // Grade 3×3 de pontuação: cor e brilho por valor (dificuldade estatística)
+  // Grade 6×3 de pontuação: cor e brilho por valor (dificuldade estatística)
   if (showZones) {
-    const cols = [
-      ['esquerda', -1, -1 / 3],
-      ['centro', -1 / 3, 1 / 3],
-      ['direita', 1 / 3, 1],
-    ]
     const rows = [
       ['alto', 2 / 3, 1],
       ['meio', 1 / 3, 2 / 3],
       ['baixo', 0, 1 / 3],
     ]
     const TIER_COLORS = {
-      200: ['120, 243, 63', 0.3],
-      150: ['120, 243, 63', 0.18],
-      125: ['167, 139, 250', 0.26],
-      100: ['167, 139, 250', 0.16],
-      75: ['37, 168, 255', 0.16],
-      50: ['37, 168, 255', 0.09],
+      250: ['120, 243, 63', 0.32],
+      175: ['120, 243, 63', 0.17],
+      150: ['167, 139, 250', 0.26],
+      125: ['167, 139, 250', 0.18],
+      100: ['167, 139, 250', 0.12],
+      75: ['37, 168, 255', 0.14],
+      50: ['37, 168, 255', 0.08],
     }
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    const pad = innerW * 0.006
+    const pad = innerW * 0.005
     for (const [rowId, y0, y1] of rows) {
-      for (const [colId, x0, x1] of cols) {
-        const id = `${rowId}-${colId}`
+      for (let c = 0; c < GRID_COLS.length; c++) {
+        const x0 = -1 + c / 3
+        const x1 = x0 + 1 / 3
+        const id = `${rowId}-${GRID_COLS[c]}`
         const points = ZONE_GRID[id]
         const [color, baseAlpha] = TIER_COLORS[points]
         const zx = g.gx(x0)
@@ -266,11 +264,11 @@ export function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = nul
         const isHot = highlight === id
         ctx.fillStyle = `rgba(${color}, ${isHot ? 0.5 : baseAlpha})`
         ctx.fillRect(zx + pad, zy + pad, zw - pad * 2, zh - pad * 2)
-        ctx.strokeStyle = `rgba(${color}, ${isHot ? 0.95 : 0.4})`
+        ctx.strokeStyle = `rgba(${color}, ${isHot ? 0.95 : 0.35})`
         ctx.lineWidth = isHot ? 2.5 : 1
         ctx.strokeRect(zx + pad, zy + pad, zw - pad * 2, zh - pad * 2)
-        ctx.font = `italic 900 ${g.goalH * 0.11}px Inter, sans-serif`
-        ctx.fillStyle = `rgba(${color}, ${isHot ? 1 : 0.85})`
+        ctx.font = `italic 900 ${g.goalH * 0.085}px Inter, sans-serif`
+        ctx.fillStyle = `rgba(${color}, ${isHot ? 1 : 0.8})`
         if (isHot) {
           ctx.shadowColor = `rgba(${color}, 0.8)`
           ctx.shadowBlur = 16
