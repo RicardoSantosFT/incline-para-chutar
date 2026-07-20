@@ -1,6 +1,6 @@
 // Carga do chute: segurar o botão enche a força; toque curtinho é cavadinha.
 export const CAVADINHA_MS = 180
-export const FULL_CHARGE_MS = 1100
+export const FULL_CHARGE_MS = 3000
 export const CAVADINHA_DURATION_S = 0.95
 
 export function isCavadinha(holdMs) {

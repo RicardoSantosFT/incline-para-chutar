@@ -201,6 +201,20 @@ function areaRect(ctx, g, widthFactor, depthFactor) {
   ctx.stroke()
 }
 
+// Geometria do fundo da rede (perspectiva): usada aqui e pela bola que
+// morre no fundo do gol (composer)
+export const BACK_NET = { scale: 0.84, insetTop: 0.12, insetBase: 0.07 }
+export const backX = (g, n) => g.goalCX + n * g.aimHalf * BACK_NET.scale
+export const backTopY = (g) => g.crossbarY + g.goalH * BACK_NET.insetTop
+export const backBaseY = (g) => g.goalBaseY - g.goalH * BACK_NET.insetBase
+export function backPoint(g, x, y) {
+  const clampedY = Math.max(0, Math.min(1, y))
+  return {
+    x: backX(g, Math.max(-1, Math.min(1, x))),
+    y: backBaseY(g) - clampedY * (backBaseY(g) - backTopY(g)),
+  }
+}
+
 // Gradientes que dependem só da geometria: recriados apenas no resize
 const gradCache = new WeakMap()
 function gradientsFor(ctx, g) {
@@ -279,31 +293,67 @@ export function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = nul
     }
   }
 
-  // Rede (com ondulação quando toma gol)
-  ctx.strokeStyle = 'rgba(214, 230, 255, 0.22)'
+  // Rede com PROFUNDIDADE: plano de fundo recuado + laterais + teto, todos
+  // balançando quando a bola entra (ripple)
+  const bxl = backX(g, -1)
+  const bxr = backX(g, 1)
+  const btY = backTopY(g)
+  const bbY = backBaseY(g)
+  const wob = (i, j, factor = 1) => ripple * Math.sin(time * 22 + i * 1.7 + j * 1.1) * 7 * factor
+
+  // Plano do fundo
+  ctx.strokeStyle = 'rgba(214, 230, 255, 0.2)'
   ctx.lineWidth = 1
-  const cols = 12
-  const rowsN = 7
-  for (let i = 0; i <= cols; i++) {
-    const nx = innerLeft + (innerW / cols) * i
+  const backCols = 10
+  const backRows = 6
+  for (let i = 0; i <= backCols; i++) {
+    const nx = bxl + ((bxr - bxl) / backCols) * i
     ctx.beginPath()
-    for (let r = 0; r <= rowsN; r++) {
-      const ny = g.crossbarY + (g.goalH / rowsN) * r
-      const wob = ripple * Math.sin(r * 1.4 + time * 22 + i) * 6 * (r / rowsN)
-      if (r === 0) ctx.moveTo(nx + wob, ny)
-      else ctx.lineTo(nx + wob, ny)
+    for (let j = 0; j <= backRows; j++) {
+      const ny = btY + ((bbY - btY) / backRows) * j
+      const w = wob(i, j)
+      if (j === 0) ctx.moveTo(nx + w, ny)
+      else ctx.lineTo(nx + w, ny + wob(j, i, 0.4))
     }
     ctx.stroke()
   }
-  for (let r = 1; r <= rowsN; r++) {
-    const ny = g.crossbarY + (g.goalH / rowsN) * r
+  for (let j = 0; j <= backRows; j++) {
+    const ny = btY + ((bbY - btY) / backRows) * j
     ctx.beginPath()
-    for (let i = 0; i <= cols; i++) {
-      const nx = innerLeft + (innerW / cols) * i
-      const wob = ripple * Math.sin(r * 1.4 + time * 22 + i) * 6 * (r / rowsN)
-      if (i === 0) ctx.moveTo(nx + wob, ny)
-      else ctx.lineTo(nx + wob, ny)
+    for (let i = 0; i <= backCols; i++) {
+      const nx = bxl + ((bxr - bxl) / backCols) * i
+      if (i === 0) ctx.moveTo(nx + wob(i, j), ny)
+      else ctx.lineTo(nx + wob(i, j), ny + wob(j, i, 0.4))
     }
+    ctx.stroke()
+  }
+
+  // Laterais: cordas ligando a trave da frente ao quadro do fundo
+  ctx.strokeStyle = 'rgba(214, 230, 255, 0.13)'
+  for (const side of [-1, 1]) {
+    const frontX = g.gx(side)
+    const backSideX = side < 0 ? bxl : bxr
+    for (let j = 0; j <= backRows; j++) {
+      const frontY = g.crossbarY + (g.goalH / backRows) * j
+      const backY = btY + ((bbY - btY) / backRows) * j
+      ctx.beginPath()
+      ctx.moveTo(frontX, frontY)
+      ctx.lineTo(backSideX + wob(j, side * 3), backY)
+      ctx.stroke()
+    }
+    // Reforço diagonal da lateral
+    ctx.beginPath()
+    ctx.moveTo(frontX, g.goalBaseY)
+    ctx.lineTo(backSideX + wob(1, side), btY)
+    ctx.stroke()
+  }
+
+  // Teto: cordas do travessão até a barra de trás
+  for (let i = 0; i <= 8; i++) {
+    const n = -1 + (2 / 8) * i
+    ctx.beginPath()
+    ctx.moveTo(g.gx(n), g.crossbarY)
+    ctx.lineTo(bxl + ((bxr - bxl) / 8) * i + wob(i, 5), btY + wob(5, i, 0.5))
     ctx.stroke()
   }
 

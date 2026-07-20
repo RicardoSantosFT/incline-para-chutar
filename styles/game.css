@@ -434,6 +434,29 @@
   pointer-events: none;
   z-index: 5;
 }
+.shot-clock {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 2px solid rgba(120, 243, 63, 0.7);
+  background: rgba(2, 12, 37, 0.72);
+  color: var(--green);
+  font-size: 22px; font-weight: 900; font-style: italic;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  z-index: 5;
+}
+.shot-clock[hidden] { display: none; }
+.shot-clock.is-urgent {
+  border-color: rgba(255, 106, 103, 0.85);
+  color: var(--red);
+  animation: clockPulse 0.5s ease-in-out infinite;
+}
+@keyframes clockPulse { 50% { transform: scale(1.12); } }
+@media (prefers-reduced-motion: reduce) { .shot-clock.is-urgent { animation: none; } }
+
 .special-badge.is-pop { animation: badgePop 320ms var(--ease-out); }
 @keyframes badgePop {
   0% { transform: translateX(-50%) scale(0.6); opacity: 0; }

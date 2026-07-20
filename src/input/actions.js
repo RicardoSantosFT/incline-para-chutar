@@ -17,7 +17,7 @@ export function initActionInput({ game, hud, audio, tilt, shoot }) {
     if (game.mode === 'striker' && game.phase === 'aim' && !game.charge) {
       game.charge = { start: game.time, notifiedFull: false }
       hud.setShootLabel('Solte para chutar!')
-    } else if (game.mode === 'keeper' && (game.phase === 'windup' || game.phase === 'flight')) {
+    } else if (game.mode === 'keeper' && (game.phase === 'countdown' || game.phase === 'windup' || game.phase === 'flight')) {
       if (game.defense && !game.defense.released && !game.defense.holding) {
         game.defense.holding = true
         game.defense.chargeStart = game.time
@@ -34,7 +34,7 @@ export function initActionInput({ game, hud, audio, tilt, shoot }) {
       shoot(holdMs)
     } else if (
       game.mode === 'keeper' &&
-      (game.phase === 'windup' || game.phase === 'flight') &&
+      (game.phase === 'countdown' || game.phase === 'windup' || game.phase === 'flight') &&
       game.defense?.holding &&
       !game.defense.released
     ) {
@@ -110,7 +110,7 @@ export function initActionInput({ game, hud, audio, tilt, shoot }) {
     if (focused?.tagName === 'BUTTON' && focused !== hud.nodes.shootBtn) return
     actionHeld = true
     actionKeyHeld = true
-    if (game.phase === 'aim' || game.phase === 'windup' || game.phase === 'flight') {
+    if (['aim', 'countdown', 'windup', 'flight'].includes(game.phase)) {
       event.preventDefault()
       onActionPress()
     }

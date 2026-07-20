@@ -8,6 +8,7 @@ import {
   WINDUP_S,
   OUTCOME_S,
   DEFENSE_CHARGE_S,
+  SHOT_CLOCK_S,
 } from './game/constants.js'
 import { powerFromHold, isCavadinha, flightDuration, CAVADINHA_DURATION_S } from './game/power.js'
 import { pickSpecial } from './game/specials.js'
@@ -65,6 +66,7 @@ const game = {
   defense: null, // { holding, released, releaseTime, target, diveTime }
   aiPlan: null, // { feint, windup } — plano da cobrança do rival
   kickTime: 0, // instante em que o rival bateu (detecta quem comprou finta)
+  clockEnd: 0, // fim do relógio de 5s (bater / se organizar)
   provocation: { nerve: 0, feintUntil: 0 },
   trail: [],
   highlight: null,
@@ -201,7 +203,7 @@ tilt.onShake(() => {
     hud.showSpecial(game.special.nome)
     audio.special()
     navigator.vibrate?.(30)
-  } else if (game.mode === 'keeper' && game.phase === 'windup') {
+  } else if (game.mode === 'keeper' && (game.phase === 'windup' || game.phase === 'countdown')) {
     if (game.duelActive) {
       // Contra humano a finta é psicológica: o rival VÊ você dançando no gol
       game.provocation.feintUntil = game.time + 0.9
@@ -290,6 +292,7 @@ function startRound() {
   tilt.setDragEnabled(!(game.mode === 'keeper' && tilt.state.mode === 'tilt'))
   if (game.mode === 'striker') {
     setPhase('aim')
+    game.clockEnd = game.time + SHOT_CLOCK_S
     hud.setShootEnabled(true)
     hud.setShootLabel('Segure e solte!')
     setAimHint()
@@ -299,7 +302,9 @@ function startRound() {
     game.defense = { holding: false, chargeStart: null, released: false, releaseTime: 0, target: null, power: 0, plan: null, diveTime: 0 }
     game.aiPlan = aiKickPlan({ round: game.state.round, rngValue: Math.random() })
     game.provocation = { nerve: 0, feintUntil: 0 }
-    setPhase('windup')
+    // Preparação: o goleiro tem o relógio para carregar força e se posicionar
+    setPhase('countdown')
+    game.clockEnd = game.time + SHOT_CLOCK_S
     hud.setShootEnabled(true)
     hud.setShootLabel('Defender!')
     setKeeperHint()
@@ -651,6 +656,25 @@ function updateGame(dt) {
   }
 
   game.phaseT += dt
+
+  // Relógio de 5s: batedor tem que bater; goleiro usa para se organizar
+  if (game.phase === 'aim' || game.phase === 'countdown') {
+    const remaining = Math.max(0, Math.ceil(game.clockEnd - game.time))
+    hud.setClock(remaining)
+    if (game.clockEnd - game.time <= 0) {
+      if (game.phase === 'aim') {
+        // Tempo esgotado: a batida sai com o que estiver carregado
+        const holdMs = game.charge ? (game.time - game.charge.start) * 1000 : 0
+        game.charge = null
+        hud.setPower(0)
+        shoot(holdMs)
+      } else {
+        setPhase('windup')
+      }
+    }
+  } else {
+    hud.setClock(null)
+  }
 
   if (game.mode === 'striker') {
     if (game.phase === 'runup' && game.phaseT >= game.shot.runupDuration) launchStrikerShot()

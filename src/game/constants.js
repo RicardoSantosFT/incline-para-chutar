@@ -26,4 +26,5 @@ export const RUNUP_S = 0.34
 export const PARADINHA_RUNUP_S = 1.05
 export const WINDUP_S = 1.0
 export const OUTCOME_S = 1.35
-export const DEFENSE_CHARGE_S = 1.0 // tempo para encher a força do pulo do goleiro
+export const DEFENSE_CHARGE_S = 3.0 // tempo para encher a força do pulo do goleiro
+export const SHOT_CLOCK_S = 5 // segundos para bater (e para o goleiro se organizar)

@@ -26,6 +26,7 @@ export function createHud() {
     shootLabel: el('btn-action-label'),
     powerFill: el('power-fill'),
     specialBadge: el('special-badge'),
+    shotClock: el('shot-clock'),
     actionHint: el('action-hint'),
     resultEyebrow: el('result-eyebrow'),
     resultTitle: el('result-title'),
@@ -99,6 +100,20 @@ export function createHud() {
     nodes.powerFill.style.width = `${Math.round(fraction * 100)}%`
   }
 
+  // Relógio de chute: null esconde; número mostra (vermelho pulsando no fim)
+  let lastClock = null
+  function setClock(seconds) {
+    if (seconds === lastClock) return
+    lastClock = seconds
+    if (seconds === null) {
+      nodes.shotClock.hidden = true
+      return
+    }
+    nodes.shotClock.hidden = false
+    nodes.shotClock.textContent = String(seconds)
+    nodes.shotClock.classList.toggle('is-urgent', seconds <= 2)
+  }
+
   function showSpecial(name) {
     if (!name) {
       nodes.specialBadge.hidden = true
@@ -125,6 +140,7 @@ export function createHud() {
     setShootEnabled,
     setShootLabel,
     setPower,
+    setClock,
     showSpecial,
   }
 }

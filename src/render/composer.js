@@ -1,6 +1,17 @@
 import { AIM_LIMIT_X, AIM_LIMIT_Y, WINDUP_S, DEFENSE_CHARGE_S } from '../game/constants.js'
 import { STRETCH_WINDOW_S, divePlan } from '../game/keeper.js'
+import { backPoint } from './scene.js'
 import { drawBall, drawTrail, drawKeeper, drawStriker, drawReticle } from './actors.js'
+
+// Gol: a bola voa até o plano do fundo da rede, estufa e cede com o peso
+function ballIntoNet(g, pos, x, y, settle) {
+  const back = backPoint(g, x, y)
+  return {
+    x: pos.x + (back.x - pos.x) * settle,
+    y: pos.y + (back.y - pos.y) * settle + settle * settle * g.goalH * 0.07,
+    scale: pos.scale * (1 - settle * 0.16),
+  }
+}
 
 // Composição das cenas dos dois modos. Recebe o estado do jogo e desenha;
 // muta apenas game.spin e game.trail (efeitos visuais do voo).
@@ -99,10 +110,12 @@ export function renderStriker(ctx, g, game) {
     ctx.globalAlpha = 1 - settle
     drawTrail(ctx, game.trail, g)
     ctx.restore()
-    // Bola por cima do travessão some ao fundo; na rede fica atrás do goleiro
+    // Bola por cima do travessão some ao fundo; gol morre no fundo da rede
     const ballProps = shot.overBar
       ? { x: pos.x, y: pos.y - settle * g.goalH * 0.12, scale: pos.scale * (1 - settle * 0.5), spin: game.spin, alpha: 1 - settle }
-      : { x: pos.x, y: pos.y + settle * g.goalH * 0.3, scale: pos.scale, spin: game.spin, alpha: 1 - settle * 0.4 }
+      : ballInNet
+        ? { ...ballIntoNet(g, pos, shot.shot.x, shot.shot.y, settle), spin: game.spin, alpha: 1 - settle * 0.25 }
+        : { x: pos.x, y: pos.y + settle * g.goalH * 0.3, scale: pos.scale, spin: game.spin, alpha: 1 - settle * 0.4 }
     if (ballInNet) {
       drawBall(ctx, ballProps, g)
       drawKeeper(ctx, g, keeperPose, 'rival')
@@ -149,12 +162,12 @@ export function renderKeeperMode(ctx, g, game) {
 
   const ballInNet = phase === 'outcome' && shot && !shot.saved && !shot.rivalMissed
   // Retícula do goleiro: escolhe o ponto do voo até o momento de soltar
-  const showReticle = !defense?.released && (phase === 'windup' || phase === 'flight')
+  const showReticle = !defense?.released && (phase === 'countdown' || phase === 'windup' || phase === 'flight')
 
-  if (phase === 'windup') {
+  if (phase === 'windup' || phase === 'countdown') {
     drawKeeper(ctx, g, pose, 'player')
     const windup = aiPlan?.windup ?? WINDUP_S
-    const t = Math.min(1, phaseT / windup)
+    const t = phase === 'countdown' ? 0 : Math.min(1, phaseT / windup)
     // Paradinha do rival: corre, congela no meio, e só então conclui
     const progress = aiPlan?.feint
       ? t < 0.38
@@ -184,13 +197,15 @@ export function renderKeeperMode(ctx, g, game) {
     drawTrail(ctx, game.trail, g)
     ctx.restore()
     const bounceX = shot.saved ? (Math.sign(shot.x) || 1) * settle * g.w * 0.12 : 0
-    const ballProps = {
-      x: pos.x + bounceX,
-      y: pos.y + settle * g.goalH * (shot.saved ? 0.5 : 0.3),
-      scale: pos.scale + (shot.saved ? settle * 0.2 : 0),
-      spin: game.spin,
-      alpha: 1 - settle * 0.3,
-    }
+    const ballProps = ballInNet
+      ? { ...ballIntoNet(g, pos, shot.x, shot.y, settle), spin: game.spin, alpha: 1 - settle * 0.25 }
+      : {
+          x: pos.x + bounceX,
+          y: pos.y + settle * g.goalH * (shot.saved ? 0.5 : 0.3),
+          scale: pos.scale + (shot.saved ? settle * 0.2 : 0),
+          spin: game.spin,
+          alpha: 1 - settle * 0.3,
+        }
     if (ballInNet) {
       drawBall(ctx, ballProps, g)
       drawKeeper(ctx, g, pose, 'player')
@@ -201,7 +216,7 @@ export function renderKeeperMode(ctx, g, game) {
     drawStriker(ctx, g, { progress: 1, kicking: false, palette: 'rival' })
   }
 
-  if (showReticle && phase === 'windup') drawKeeperReticle(ctx, g, game, charging, chargePower)
+  if (showReticle && phase !== 'flight') drawKeeperReticle(ctx, g, game, charging, chargePower)
 }
 
 // Retícula do goleiro: enquanto carrega, o arco fecha quando a FORÇA casa
