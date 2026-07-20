@@ -118,7 +118,7 @@ test('curva encolhe o alcance do goleiro', () => {
   assert.equal(comCurva.saved, false, 'com curva o goleiro não alcança')
 })
 
-test('gol de especial soma o bônus de estilo', () => {
+test('gol de especial soma o bônus de estilo (baixo-centro vale 75)', () => {
   const chaleira = SPECIALS.find((s) => s.id === 'chaleira')
   const r = resolveShot2D({
     aim: { x: 0, y: 0.3 },
@@ -128,7 +128,20 @@ test('gol de especial soma o bônus de estilo', () => {
     keeper: KEEPER_FAR,
     ...NO_SPREAD,
   })
-  assert.equal(r.points, 100 + PRECISION_BONUS + chaleira.style)
+  assert.equal(r.zoneId, 'baixo-centro')
+  assert.equal(r.points, 75 + PRECISION_BONUS + chaleira.style)
+})
+
+test('gol no ângulo informa a área e paga 200', () => {
+  const r = resolveShot2D({
+    aim: { x: 0.85, y: 0.88 },
+    stability: 1,
+    power: 0.6,
+    keeper: { x: -2 / 3, y: 0.25 },
+    ...NO_SPREAD,
+  })
+  assert.equal(r.zoneId, 'alto-direita')
+  assert.equal(r.points, 200 + PRECISION_BONUS)
 })
 
 test('goleiro comprometido pela paradinha quase não alcança', () => {

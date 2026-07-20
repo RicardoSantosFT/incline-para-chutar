@@ -5,53 +5,56 @@ import {
   zoneCenter,
   isOffTarget,
   isOffTarget2D,
-  heightMultiplier,
+  zoneIdForPlacement,
   pointsForPlacement,
   ZONES,
+  ZONE_GRID,
 } from '../src/game/zones.js'
 
-test('gol tem três zonas: esquerda 50, centro 100, direita 50', () => {
+test('colunas continuam três (goleiro rival mergulha por coluna)', () => {
   assert.equal(ZONES.length, 3)
-  assert.deepEqual(ZONES.map((z) => z.points), [50, 100, 50])
   assert.deepEqual(ZONES.map((z) => z.id), ['esquerda', 'centro', 'direita'])
-})
-
-test('zoneForX devolve o centro para a mira no meio', () => {
   assert.equal(zoneForX(0).id, 'centro')
-  assert.equal(zoneForX(0).points, 100)
-})
-
-test('zoneForX devolve zonas laterais além de um terço', () => {
   assert.equal(zoneForX(-0.5).id, 'esquerda')
-  assert.equal(zoneForX(0.5).id, 'direita')
-  assert.equal(zoneForX(0.5).points, 50)
+  assert.equal(zoneCenter('direita'), 2 / 3)
 })
 
-test('zoneCenter aponta para o meio de cada zona', () => {
-  assert.equal(zoneCenter('centro'), 0)
-  assert.ok(Math.abs(zoneCenter('esquerda') - -2 / 3) < 1e-9)
-  assert.ok(Math.abs(zoneCenter('direita') - 2 / 3) < 1e-9)
+test('o gol tem 9 áreas com pontos por dificuldade estatística', () => {
+  assert.equal(Object.keys(ZONE_GRID).length, 9)
+  // ângulos são os mais valiosos; altura de goleiro (meio-centro) a menor
+  assert.equal(ZONE_GRID['alto-esquerda'], 200)
+  assert.equal(ZONE_GRID['alto-direita'], 200)
+  assert.equal(ZONE_GRID['alto-centro'], 150)
+  assert.equal(ZONE_GRID['meio-esquerda'], 100)
+  assert.equal(ZONE_GRID['meio-direita'], 100)
+  assert.equal(ZONE_GRID['meio-centro'], 50)
+  assert.equal(ZONE_GRID['baixo-esquerda'], 125)
+  assert.equal(ZONE_GRID['baixo-direita'], 125)
+  assert.equal(ZONE_GRID['baixo-centro'], 75)
 })
 
-test('isOffTarget detecta bola fora na horizontal', () => {
+test('zoneIdForPlacement mapeia linha e coluna por terços', () => {
+  assert.equal(zoneIdForPlacement(-0.8, 0.9), 'alto-esquerda')
+  assert.equal(zoneIdForPlacement(0, 0.9), 'alto-centro')
+  assert.equal(zoneIdForPlacement(0.8, 0.75), 'alto-direita')
+  assert.equal(zoneIdForPlacement(-0.5, 0.5), 'meio-esquerda')
+  assert.equal(zoneIdForPlacement(0.1, 0.4), 'meio-centro')
+  assert.equal(zoneIdForPlacement(0.9, 0.2), 'baixo-direita')
+  assert.equal(zoneIdForPlacement(0, 0.05), 'baixo-centro')
+})
+
+test('pontos por colocação seguem a tabela das 9 áreas', () => {
+  assert.equal(pointsForPlacement(-0.8, 0.9), 200)
+  assert.equal(pointsForPlacement(0, 0.8), 150)
+  assert.equal(pointsForPlacement(0.8, 0.5), 100)
+  assert.equal(pointsForPlacement(0, 0.5), 50)
+  assert.equal(pointsForPlacement(-0.9, 0.1), 125)
+  assert.equal(pointsForPlacement(0, 0.2), 75)
+})
+
+test('mira fora do gol continua fora', () => {
   assert.equal(isOffTarget(1.01), true)
-  assert.equal(isOffTarget(0.99), false)
-})
-
-test('isOffTarget2D detecta fora pela lateral e por cima do travessão', () => {
   assert.equal(isOffTarget2D(1.05, 0.5), true)
   assert.equal(isOffTarget2D(0, 1.05), true)
   assert.equal(isOffTarget2D(0.9, 0.99), false)
-})
-
-test('chute alto vale mais: multiplicador 1,5 acima da linha alta', () => {
-  assert.equal(heightMultiplier(0.7), 1.5)
-  assert.equal(heightMultiplier(0.3), 1)
-})
-
-test('pontos por colocação: ângulo alto do centro vale 150, canto baixo 50', () => {
-  assert.equal(pointsForPlacement(0, 0.8), 150)
-  assert.equal(pointsForPlacement(0, 0.3), 100)
-  assert.equal(pointsForPlacement(0.8, 0.8), 75)
-  assert.equal(pointsForPlacement(0.8, 0.2), 50)
 })

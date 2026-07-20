@@ -132,7 +132,8 @@ export function createHud() {
 export const COACH_TIPS = [
   'Incline devagar para ter mais controle: agora a mira é livre, dá até para isolar!',
   'O arco da retícula mostra sua estabilidade: espere ele fechar antes de chutar.',
-  'Bola alta vale ×1,5 — mas cuidado para não mandar por cima do travessão.',
+  'O ângulo vale 200, mas é onde mais se isola — mão firme e força na medida.',
+  'Meia altura no centro é altura de goleiro: vale só 50. Fuja dela!',
   'Segure o botão para dar força. Toque curtinho é cavadinha: humilha goleiro que pulou!',
   'Chacoalhe o celular antes de bater para armar um golpe especial.',
   'No modo goleiro, chacoalhe durante a corrida do rival para deixá-lo nervoso.',

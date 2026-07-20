@@ -1,5 +1,6 @@
-// Cenário: estádio noturno, torcida, placas, gramado e gol com zonas 50/100/50.
+// Cenário: estádio noturno, torcida, placas, gramado e gol com a grade 3×3.
 // Todas as funções recebem a geometria `g` calculada a partir do tamanho do canvas.
+import { ZONE_GRID } from '../game/zones.js'
 
 export function geometry(w, h) {
   const goalW = w * 0.76
@@ -230,67 +231,54 @@ export function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = nul
   ctx.fillStyle = gradientsFor(ctx, g).inner
   ctx.fillRect(innerLeft, g.crossbarY, innerW, g.goalH)
 
-  // Painéis das zonas
+  // Grade 3×3 de pontuação: cor e brilho por valor (dificuldade estatística)
   if (showZones) {
-    const zones = [
-      { id: 'esquerda', from: -1, to: -1 / 3, color: '139, 92, 246', label: '50' },
-      { id: 'centro', from: -1 / 3, to: 1 / 3, color: '120, 243, 63', label: '100' },
-      { id: 'direita', from: 1 / 3, to: 1, color: '139, 92, 246', label: '50' },
+    const cols = [
+      ['esquerda', -1, -1 / 3],
+      ['centro', -1 / 3, 1 / 3],
+      ['direita', 1 / 3, 1],
     ]
+    const rows = [
+      ['alto', 2 / 3, 1],
+      ['meio', 1 / 3, 2 / 3],
+      ['baixo', 0, 1 / 3],
+    ]
+    const TIER_COLORS = {
+      200: ['120, 243, 63', 0.3],
+      150: ['120, 243, 63', 0.18],
+      125: ['167, 139, 250', 0.26],
+      100: ['167, 139, 250', 0.16],
+      75: ['37, 168, 255', 0.16],
+      50: ['37, 168, 255', 0.09],
+    }
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    for (const z of zones) {
-      const zx = g.gx(z.from)
-      const zw = g.gx(z.to) - zx
-      const pad = innerW * 0.008
-      const isHot = highlight === z.id
-      const alpha = isHot ? 0.42 : 0.17
-      ctx.fillStyle = `rgba(${z.color}, ${alpha})`
-      ctx.fillRect(zx + pad, g.crossbarY + pad * 2, zw - pad * 2, g.goalH - pad * 3)
-      ctx.strokeStyle = `rgba(${z.color}, ${isHot ? 0.95 : 0.5})`
-      ctx.lineWidth = isHot ? 2.5 : 1.4
-      ctx.strokeRect(zx + pad, g.crossbarY + pad * 2, zw - pad * 2, g.goalH - pad * 3)
-      ctx.font = `italic 900 ${g.goalH * 0.2}px Inter, sans-serif`
-      ctx.fillStyle = `rgba(${z.color}, ${isHot ? 1 : 0.85})`
-      if (isHot) {
-        ctx.shadowColor = `rgba(${z.color}, 0.8)`
-        ctx.shadowBlur = 18
+    const pad = innerW * 0.006
+    for (const [rowId, y0, y1] of rows) {
+      for (const [colId, x0, x1] of cols) {
+        const id = `${rowId}-${colId}`
+        const points = ZONE_GRID[id]
+        const [color, baseAlpha] = TIER_COLORS[points]
+        const zx = g.gx(x0)
+        const zw = g.gx(x1) - zx
+        const zy = g.gy(y1)
+        const zh = g.gy(y0) - zy
+        const isHot = highlight === id
+        ctx.fillStyle = `rgba(${color}, ${isHot ? 0.5 : baseAlpha})`
+        ctx.fillRect(zx + pad, zy + pad, zw - pad * 2, zh - pad * 2)
+        ctx.strokeStyle = `rgba(${color}, ${isHot ? 0.95 : 0.4})`
+        ctx.lineWidth = isHot ? 2.5 : 1
+        ctx.strokeRect(zx + pad, zy + pad, zw - pad * 2, zh - pad * 2)
+        ctx.font = `italic 900 ${g.goalH * 0.11}px Inter, sans-serif`
+        ctx.fillStyle = `rgba(${color}, ${isHot ? 1 : 0.85})`
+        if (isHot) {
+          ctx.shadowColor = `rgba(${color}, 0.8)`
+          ctx.shadowBlur = 16
+        }
+        ctx.fillText(String(points), zx + zw / 2, zy + zh / 2)
+        ctx.shadowBlur = 0
       }
-      ctx.fillText(z.label, zx + zw / 2, g.crossbarY + g.goalH * 0.22)
-      ctx.shadowBlur = 0
     }
-
-    // Linha da zona alta: bola acima dela multiplica os pontos por 1,5
-    const highY = g.gy(0.6)
-    ctx.strokeStyle = 'rgba(255, 223, 27, 0.4)'
-    ctx.lineWidth = 1.2
-    ctx.setLineDash([4, 6])
-    ctx.beginPath()
-    ctx.moveTo(innerLeft + 4, highY)
-    ctx.lineTo(innerRight - 4, highY)
-    ctx.stroke()
-    ctx.setLineDash([])
-    ctx.font = `800 ${Math.max(8, g.goalH * 0.075)}px Inter, sans-serif`
-    ctx.fillStyle = 'rgba(255, 223, 27, 0.75)'
-    ctx.textAlign = 'right'
-    ctx.fillText('ACIMA ×1,5', innerRight - 8, highY - 5)
-    ctx.textAlign = 'center'
-
-    // Alvo radar no centro (o "alvo" da referência)
-    const tx = g.gx(0)
-    const ty = g.crossbarY + g.goalH * 0.56
-    const tr = Math.min(innerW * 0.09, g.goalH * 0.26)
-    ctx.strokeStyle = 'rgba(120, 243, 63, 0.75)'
-    ctx.lineWidth = 1.6
-    ctx.setLineDash([5, 5])
-    ctx.lineDashOffset = -time * 14
-    ctx.beginPath()
-    ctx.arc(tx, ty, tr, 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.setLineDash([])
-    ctx.beginPath()
-    ctx.arc(tx, ty, tr * 0.45, 0, Math.PI * 2)
-    ctx.stroke()
   }
 
   // Rede (com ondulação quando toma gol)

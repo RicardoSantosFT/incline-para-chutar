@@ -500,7 +500,7 @@ function endStrikerFlight() {
   game.state = applyResult(game.state, { success, points: shot.points })
 
   if (success) {
-    game.highlight = shot.zone.id
+    game.highlight = shot.zoneId
     if (!reducedMotion) {
       ripple(fx)
       burst(fx, g.gx(shot.shot.x), g.gy(shot.shot.y), 'goal')

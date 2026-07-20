@@ -213,40 +213,52 @@ img { max-width: 100%; height: auto; }
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1.1fr 1fr;
-  gap: 7px;
+  gap: 5px;
   border: 3px solid #e8f2ff;
   border-bottom: 0;
   border-radius: 6px 6px 0 0;
-  padding: 8px;
+  padding: 7px;
   background:
     repeating-linear-gradient(0deg, transparent 0 9px, rgba(214, 230, 255, 0.11) 9px 10px),
     repeating-linear-gradient(90deg, transparent 0 9px, rgba(214, 230, 255, 0.11) 9px 10px);
 }
 .gp-zone {
   display: grid; place-items: center;
-  min-height: 74px;
-  border-radius: 8px;
-  font-size: 24px; font-weight: 900; font-style: italic;
+  min-height: 34px;
+  border-radius: 7px;
+  font-size: 15px; font-weight: 900; font-style: italic;
   position: relative;
+}
+.gp-zone--hot {
+  color: var(--green);
+  background: rgba(120, 243, 63, 0.24);
+  border: 1px solid rgba(120, 243, 63, 0.7);
+  text-shadow: 0 0 14px rgba(88, 255, 70, 0.66);
+}
+.gp-zone--warm {
+  color: var(--green);
+  background: var(--green-soft);
+  border: 1px solid rgba(120, 243, 63, 0.45);
+}
+.gp-zone--mid {
+  color: var(--purple);
+  background: rgba(139, 92, 246, 0.26);
+  border: 1px solid rgba(167, 139, 250, 0.6);
 }
 .gp-zone--side {
   color: var(--purple);
   background: var(--purple-soft);
-  border: 1px solid rgba(167, 139, 250, 0.55);
-  text-shadow: 0 0 14px rgba(139, 92, 246, 0.66);
+  border: 1px solid rgba(167, 139, 250, 0.45);
 }
-.gp-zone--center {
-  color: var(--green);
-  background: var(--green-soft);
-  border: 1px solid rgba(120, 243, 63, 0.66);
-  text-shadow: 0 0 16px rgba(88, 255, 70, 0.66);
+.gp-zone--cool {
+  color: var(--blue);
+  background: rgba(37, 168, 255, 0.14);
+  border: 1px solid rgba(37, 168, 255, 0.45);
 }
-.gp-ring {
-  position: absolute;
-  width: 52px; height: 52px;
-  border: 2px dashed rgba(120, 243, 63, 0.55);
-  border-radius: 50%;
-  animation: ringPulse 2.2s ease-in-out infinite;
+.gp-zone--cold {
+  color: rgba(120, 190, 240, 0.8);
+  background: rgba(37, 168, 255, 0.07);
+  border: 1px solid rgba(37, 168, 255, 0.3);
 }
 @keyframes ringPulse {
   0%, 100% { transform: scale(1); opacity: 0.85; }
@@ -808,10 +820,16 @@ img { max-width: 100%; height: auto; }
         <p class="menu-sub">Incline para <b>mirar em qualquer canto</b>, segure o botão para dar <b>força</b> e chacoalhe para o <b>golpe especial</b>!</p>
 
         <div class="goal-preview" aria-hidden="true">
-          <div class="goal-preview__frame">
-            <span class="gp-zone gp-zone--side">50</span>
-            <span class="gp-zone gp-zone--center"><i class="gp-ring"></i>100</span>
-            <span class="gp-zone gp-zone--side">50</span>
+          <div class="goal-preview__frame goal-preview__frame--grid">
+            <span class="gp-zone gp-zone--hot">200</span>
+            <span class="gp-zone gp-zone--warm">150</span>
+            <span class="gp-zone gp-zone--hot">200</span>
+            <span class="gp-zone gp-zone--side">100</span>
+            <span class="gp-zone gp-zone--cold">50</span>
+            <span class="gp-zone gp-zone--side">100</span>
+            <span class="gp-zone gp-zone--mid">125</span>
+            <span class="gp-zone gp-zone--cool">75</span>
+            <span class="gp-zone gp-zone--mid">125</span>
           </div>
           <div class="gp-dots"></div>
           <div class="gp-ball"></div>
@@ -834,7 +852,7 @@ img { max-width: 100%; height: auto; }
         </ul>
         <p class="hint-note">
           <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 10.6v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.15" fill="currentColor"/></svg>
-          Toque curtinho = cavadinha · bola alta vale ×1,5 · mira livre (dá até pra isolar!)
+          Toque curtinho = cavadinha · ângulo vale 200 · mira livre (dá até pra isolar!)
         </p>
 
         <div class="best-row">
@@ -1158,27 +1176,57 @@ function createShakeDetector({ threshold = 12, minSpikes = 3, windowMs = 900, co
   }
 }
 
-// Zonas do gol, como na tela de referência: 50 | 100 | 50.
-// Com a mira 2D, bola alta multiplica os pontos (ângulo é mais difícil).
+// Colunas do gol (o mergulho do goleiro rival é sorteado por coluna) e a
+// grade de pontuação 3×3. Os pontos seguem a dificuldade estatística medida
+// no próprio motor (Monte Carlo): ângulos são difíceis de executar (risco de
+// isolar) e de defender; meia altura no centro é a zona de conforto do goleiro.
 const ZONES = [
-  { id: 'esquerda', from: -1, to: -1 / 3, points: 50 },
-  { id: 'centro', from: -1 / 3, to: 1 / 3, points: 100 },
-  { id: 'direita', from: 1 / 3, to: 1, points: 50 },
+  { id: 'esquerda', from: -1, to: -1 / 3 },
+  { id: 'centro', from: -1 / 3, to: 1 / 3 },
+  { id: 'direita', from: 1 / 3, to: 1 },
 ]
 
-const HIGH_ZONE_Y = 0.6
-const HIGH_MULTIPLIER = 1.5
+const ZONE_GRID = {
+  'alto-esquerda': 200,
+  'alto-centro': 150,
+  'alto-direita': 200,
+  'meio-esquerda': 100,
+  'meio-centro': 50,
+  'meio-direita': 100,
+  'baixo-esquerda': 125,
+  'baixo-centro': 75,
+  'baixo-direita': 125,
+}
+
+const colFor = (x) => {
+  const clamped = Math.max(-1, Math.min(1, x))
+  if (clamped < -1 / 3) return 'esquerda'
+  if (clamped > 1 / 3) return 'direita'
+  return 'centro'
+}
+
+const rowFor = (y) => {
+  const clamped = Math.max(0, Math.min(1, y))
+  if (clamped < 1 / 3) return 'baixo'
+  if (clamped > 2 / 3) return 'alto'
+  return 'meio'
+}
 
 function zoneForX(x) {
-  const clamped = Math.max(-1, Math.min(1, x))
-  if (clamped < -1 / 3) return ZONES[0]
-  if (clamped > 1 / 3) return ZONES[2]
-  return ZONES[1]
+  return ZONES.find((z) => z.id === colFor(x))
 }
 
 function zoneCenter(id) {
   const zone = ZONES.find((z) => z.id === id)
   return (zone.from + zone.to) / 2
+}
+
+function zoneIdForPlacement(x, y) {
+  return `${rowFor(y)}-${colFor(x)}`
+}
+
+function pointsForPlacement(x, y) {
+  return ZONE_GRID[zoneIdForPlacement(x, y)]
 }
 
 function isOffTarget(x) {
@@ -1187,14 +1235,6 @@ function isOffTarget(x) {
 
 function isOffTarget2D(x, y) {
   return Math.abs(x) > 1 || y > 1
-}
-
-function heightMultiplier(y) {
-  return y > HIGH_ZONE_Y ? HIGH_MULTIPLIER : 1
-}
-
-function pointsForPlacement(x, y) {
-  return Math.round(zoneForX(x).points * heightMultiplier(y))
 }
 
 // Quanto menos estável a mira no momento do chute, maior o desvio possível.
@@ -1258,12 +1298,12 @@ function resolveShot2D({
 
   const saved = !offTarget && insideEllipse(shotX - keeper.x, shotY - keeper.y, rx, ry)
   const precise = stability >= PRECISION_THRESHOLD
-  const zone = offTarget ? null : zoneForX(shotX)
+  const zoneId = offTarget ? null : zoneIdForPlacement(shotX, shotY)
   const base = offTarget || saved ? 0 : pointsForPlacement(shotX, shotY)
   const points =
     base === 0 ? 0 : base + (precise ? PRECISION_BONUS : 0) + (special?.style ?? 0) + (cavadinha ? CAVADINHA_STYLE : 0)
 
-  return { shot: { x: shotX, y: shotY }, zone, saved, offTarget, overBar, precise, points }
+  return { shot: { x: shotX, y: shotY }, zoneId, saved, offTarget, overBar, precise, points }
 }
 
 // Mergulho 2D do goleiro rival: zona pelos pesos + altura baixa ou alta.
@@ -2445,9 +2485,8 @@ function createTiltInput() {
   }
 }
 
-// Cenário: estádio noturno, torcida, placas, gramado e gol com zonas 50/100/50.
+// Cenário: estádio noturno, torcida, placas, gramado e gol com a grade 3×3.
 // Todas as funções recebem a geometria `g` calculada a partir do tamanho do canvas.
-
 function geometry(w, h) {
   const goalW = w * 0.76
   const goalCX = w / 2
@@ -2677,67 +2716,54 @@ function drawGoalAndZones(ctx, g, { time = 0, ripple = 0, highlight = null, show
   ctx.fillStyle = gradientsFor(ctx, g).inner
   ctx.fillRect(innerLeft, g.crossbarY, innerW, g.goalH)
 
-  // Painéis das zonas
+  // Grade 3×3 de pontuação: cor e brilho por valor (dificuldade estatística)
   if (showZones) {
-    const zones = [
-      { id: 'esquerda', from: -1, to: -1 / 3, color: '139, 92, 246', label: '50' },
-      { id: 'centro', from: -1 / 3, to: 1 / 3, color: '120, 243, 63', label: '100' },
-      { id: 'direita', from: 1 / 3, to: 1, color: '139, 92, 246', label: '50' },
+    const cols = [
+      ['esquerda', -1, -1 / 3],
+      ['centro', -1 / 3, 1 / 3],
+      ['direita', 1 / 3, 1],
     ]
+    const rows = [
+      ['alto', 2 / 3, 1],
+      ['meio', 1 / 3, 2 / 3],
+      ['baixo', 0, 1 / 3],
+    ]
+    const TIER_COLORS = {
+      200: ['120, 243, 63', 0.3],
+      150: ['120, 243, 63', 0.18],
+      125: ['167, 139, 250', 0.26],
+      100: ['167, 139, 250', 0.16],
+      75: ['37, 168, 255', 0.16],
+      50: ['37, 168, 255', 0.09],
+    }
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    for (const z of zones) {
-      const zx = g.gx(z.from)
-      const zw = g.gx(z.to) - zx
-      const pad = innerW * 0.008
-      const isHot = highlight === z.id
-      const alpha = isHot ? 0.42 : 0.17
-      ctx.fillStyle = `rgba(${z.color}, ${alpha})`
-      ctx.fillRect(zx + pad, g.crossbarY + pad * 2, zw - pad * 2, g.goalH - pad * 3)
-      ctx.strokeStyle = `rgba(${z.color}, ${isHot ? 0.95 : 0.5})`
-      ctx.lineWidth = isHot ? 2.5 : 1.4
-      ctx.strokeRect(zx + pad, g.crossbarY + pad * 2, zw - pad * 2, g.goalH - pad * 3)
-      ctx.font = `italic 900 ${g.goalH * 0.2}px Inter, sans-serif`
-      ctx.fillStyle = `rgba(${z.color}, ${isHot ? 1 : 0.85})`
-      if (isHot) {
-        ctx.shadowColor = `rgba(${z.color}, 0.8)`
-        ctx.shadowBlur = 18
+    const pad = innerW * 0.006
+    for (const [rowId, y0, y1] of rows) {
+      for (const [colId, x0, x1] of cols) {
+        const id = `${rowId}-${colId}`
+        const points = ZONE_GRID[id]
+        const [color, baseAlpha] = TIER_COLORS[points]
+        const zx = g.gx(x0)
+        const zw = g.gx(x1) - zx
+        const zy = g.gy(y1)
+        const zh = g.gy(y0) - zy
+        const isHot = highlight === id
+        ctx.fillStyle = `rgba(${color}, ${isHot ? 0.5 : baseAlpha})`
+        ctx.fillRect(zx + pad, zy + pad, zw - pad * 2, zh - pad * 2)
+        ctx.strokeStyle = `rgba(${color}, ${isHot ? 0.95 : 0.4})`
+        ctx.lineWidth = isHot ? 2.5 : 1
+        ctx.strokeRect(zx + pad, zy + pad, zw - pad * 2, zh - pad * 2)
+        ctx.font = `italic 900 ${g.goalH * 0.11}px Inter, sans-serif`
+        ctx.fillStyle = `rgba(${color}, ${isHot ? 1 : 0.85})`
+        if (isHot) {
+          ctx.shadowColor = `rgba(${color}, 0.8)`
+          ctx.shadowBlur = 16
+        }
+        ctx.fillText(String(points), zx + zw / 2, zy + zh / 2)
+        ctx.shadowBlur = 0
       }
-      ctx.fillText(z.label, zx + zw / 2, g.crossbarY + g.goalH * 0.22)
-      ctx.shadowBlur = 0
     }
-
-    // Linha da zona alta: bola acima dela multiplica os pontos por 1,5
-    const highY = g.gy(0.6)
-    ctx.strokeStyle = 'rgba(255, 223, 27, 0.4)'
-    ctx.lineWidth = 1.2
-    ctx.setLineDash([4, 6])
-    ctx.beginPath()
-    ctx.moveTo(innerLeft + 4, highY)
-    ctx.lineTo(innerRight - 4, highY)
-    ctx.stroke()
-    ctx.setLineDash([])
-    ctx.font = `800 ${Math.max(8, g.goalH * 0.075)}px Inter, sans-serif`
-    ctx.fillStyle = 'rgba(255, 223, 27, 0.75)'
-    ctx.textAlign = 'right'
-    ctx.fillText('ACIMA ×1,5', innerRight - 8, highY - 5)
-    ctx.textAlign = 'center'
-
-    // Alvo radar no centro (o "alvo" da referência)
-    const tx = g.gx(0)
-    const ty = g.crossbarY + g.goalH * 0.56
-    const tr = Math.min(innerW * 0.09, g.goalH * 0.26)
-    ctx.strokeStyle = 'rgba(120, 243, 63, 0.75)'
-    ctx.lineWidth = 1.6
-    ctx.setLineDash([5, 5])
-    ctx.lineDashOffset = -time * 14
-    ctx.beginPath()
-    ctx.arc(tx, ty, tr, 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.setLineDash([])
-    ctx.beginPath()
-    ctx.arc(tx, ty, tr * 0.45, 0, Math.PI * 2)
-    ctx.stroke()
   }
 
   // Rede (com ondulação quando toma gol)
@@ -3692,7 +3718,8 @@ function createHud() {
 const COACH_TIPS = [
   'Incline devagar para ter mais controle: agora a mira é livre, dá até para isolar!',
   'O arco da retícula mostra sua estabilidade: espere ele fechar antes de chutar.',
-  'Bola alta vale ×1,5 — mas cuidado para não mandar por cima do travessão.',
+  'O ângulo vale 200, mas é onde mais se isola — mão firme e força na medida.',
+  'Meia altura no centro é altura de goleiro: vale só 50. Fuja dela!',
   'Segure o botão para dar força. Toque curtinho é cavadinha: humilha goleiro que pulou!',
   'Chacoalhe o celular antes de bater para armar um golpe especial.',
   'No modo goleiro, chacoalhe durante a corrida do rival para deixá-lo nervoso.',
@@ -4440,7 +4467,7 @@ function endStrikerFlight() {
   game.state = applyResult(game.state, { success, points: shot.points })
 
   if (success) {
-    game.highlight = shot.zone.id
+    game.highlight = shot.zoneId
     if (!reducedMotion) {
       ripple(fx)
       burst(fx, g.gx(shot.shot.x), g.gy(shot.shot.y), 'goal')

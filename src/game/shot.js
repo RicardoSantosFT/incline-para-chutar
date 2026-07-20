@@ -1,4 +1,4 @@
-import { zoneForX, zoneCenter, pointsForPlacement, ZONES } from './zones.js'
+import { zoneCenter, zoneIdForPlacement, pointsForPlacement, ZONES } from './zones.js'
 import {
   KEEPER_REACH_X,
   KEEPER_REACH_Y,
@@ -71,12 +71,12 @@ export function resolveShot2D({
 
   const saved = !offTarget && insideEllipse(shotX - keeper.x, shotY - keeper.y, rx, ry)
   const precise = stability >= PRECISION_THRESHOLD
-  const zone = offTarget ? null : zoneForX(shotX)
+  const zoneId = offTarget ? null : zoneIdForPlacement(shotX, shotY)
   const base = offTarget || saved ? 0 : pointsForPlacement(shotX, shotY)
   const points =
     base === 0 ? 0 : base + (precise ? PRECISION_BONUS : 0) + (special?.style ?? 0) + (cavadinha ? CAVADINHA_STYLE : 0)
 
-  return { shot: { x: shotX, y: shotY }, zone, saved, offTarget, overBar, precise, points }
+  return { shot: { x: shotX, y: shotY }, zoneId, saved, offTarget, overBar, precise, points }
 }
 
 // Mergulho 2D do goleiro rival: zona pelos pesos + altura baixa ou alta.
